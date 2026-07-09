@@ -1,0 +1,24 @@
+# LaTeX build artifacts (keep .tex, .bib, and .pdf — the PDFs are evidence)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.fff
+*.ttt
+*Notes.bib
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+.*.swp

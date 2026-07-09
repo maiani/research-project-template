@@ -1,0 +1,39 @@
+# LaTeX build artefacts (keep .tex, .bib, .pdf)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.fff
+*.ttt
+*Notes.bib
+
+# Python
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+.pixi
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+.*.swp
+
+# Nested git repos — each has its own .git, not tracked by root
+/manuscript/
+/repository/
+
+# Bibliography: track .bib files, ignore reference PDFs and API caches
+/bibliography/*.files/
+/bibliography/.pynakes-cache/

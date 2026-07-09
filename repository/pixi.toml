@@ -1,0 +1,16 @@
+[workspace]
+authors = ["{{ AUTHOR }}"]
+channels = ["conda-forge"]
+name = "{{ PROJECT_SLUG }}"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[dependencies]
+python = ">=3.14,<3.15"
+numpy = ">=2,<3"
+scipy = ">=1.17,<2"
+matplotlib = ">=3.10,<4"
+sympy = ">=1.14,<2"
+tqdm = ">=4.68,<5"
+ipykernel = ">=7.3,<8"
+jupyterlab = ">=4.5,<5"

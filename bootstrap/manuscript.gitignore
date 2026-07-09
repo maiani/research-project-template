@@ -1,0 +1,21 @@
+*.log 
+*.aux 
+*.bbl 
+*.blg 
+*.brf 
+*.fls 
+*.fdb_latexmk 
+*.synctex.gz 
+*.toc 
+*.out 
+*.lof 
+*.lot 
+*.nav 
+*.snm 
+*.vrb 
+
+*Notes.bib
+*_diff.pdf
+
+{{ PROJECT_SLUG }}.pdf
+{{ PROJECT_SLUG }}_sm.pdf
