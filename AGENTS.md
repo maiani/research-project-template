@@ -12,7 +12,7 @@ for the project context — what this paper is, its current status, and physics 
 | `repository/` | **Finalized** code — complete & reproducible, published with the paper | nested git → public repo | **Yes** |
 | `manuscript/` | The manuscript (LaTeX) | nested Overleaf git | Uploaded on arXiv |
 | `workspace/` | Exploration & draft code, computation, notes, evidence | tracked by the root repo | **No** |
-| `bibliography/` | Project bibliography (superset of the manuscript) | BibTex tracked by the root repo | **No** |
+| `bibliography/` | Project bibliography (superset of the manuscript) | BibTeX tracked by the root repo | **No** |
 | `journal/` | Session log — one dated file per day | tracked by the root repo | **No** |
 
 ## Working rules
@@ -28,44 +28,43 @@ for the project context — what this paper is, its current status, and physics 
   `repository/` only when a calculation is finalized AND the author explicitly
   decides to promote it. Don't move work into the published repo autonomously —
   propose it and wait for the call.
-- **`manuscript/` is authoritative on Overleaf.** Treat Overleaf git as the source of
-  truth. If an Overleaf remote exists, clone it into `manuscript/`; do not create
-  an independent local manuscript repository.
+- **`manuscript/` is its own Git repository.** When an Overleaf project exists,
+  treat its Git remote as authoritative and clone it into `manuscript/`. Otherwise,
+  use the local repository created during project setup and add an Overleaf remote later.
 
 - **Evidence-before-claims:** new physics results are hypotheses until verified
-  numerically. Confirm an effect is real (and report honestly if it's fragile)
-  before a rebuttal commits to it.
+  analytically or numerically. Confirm an effect is real (and report honestly if it's fragile)
+  before a statements commits to it.
 
 ## How the three folders interact (revision workflow)
 
 1. **Derive, compute & explore in `workspace/`** — analytic notes work out the
-   symmetry/algebra and end with a "Takeaway for the rebuttal", and draft
-   figure/calculation code is developed and run here. This is where a result is
+   symmetry/algebra and end with a takeaway, and draft figure/calculation code is developed and run here. This is where a result is
    first established and verified.
 2. **Promote finalized code to `repository/`** — once a calculation is done and
    the author calls it, the script moves to the published repo.
 3. **Fold into `manuscript/`** — the verified result becomes a main-text sentence/panel
    (kept minimal) plus the bulk in Supplemental Material, and a point in the
-   rebuttal letter.
+   response letter if the paper is in review process.
 
 So a typical task flows: derive + compute (workspace) → [author promotes] → finalized
-script + figure (code) → manuscript + rebuttal (paper).
+script + figure (code) → manuscript (paper).
 
 ## Journaling
 
-Journal entries are chained so each session loads with full context in one read.
+Journal entries are chained by day so each session loads with full context in one read.
 
-- **Start of session:** read the latest entry in [journal/](journal/) (newest
-  filename by ISO date). Its **Previous session** block at the top gives you
-  last session's context. Reach back to older files only when the
+- **Start of session:** read the newest file matching `journal/20??-??-??.md`.
+  Its **Previous session** block at the top summarizes the preceding day. Reach
+  back to older files only when the
   summary isn't enough — this keeps token usage minimal.
-- **On starting a new session:** before working, read the latest entry. If
-  today is a different day than the latest entry's date, create a new dated file
+- **On starting work:** before working, read the latest daily entry. If today is
+  different from the latest entry's date, create a new dated file
   `journal/YYYY-MM-DD.md`. **Begin the file with a `## Previous session`
-  block** — a concise summary (up to ~8 lines) extracted from that latest entry. Then
-  document the current session below. This makes every new file self-contained
-  context for the next agent invocation. If today is the same day, append to the
-  existing entry instead.
+  block** — a concise summary (up to ~8 lines) of the preceding day's entry. Then
+  document the current session below. If today is the same day, append each
+  additional session to today's existing file; do not rewrite its **Previous
+  session** block.
 - Update the journal with what was done, what's blocked, and the next action.
 
 ## Coding style
@@ -84,9 +83,12 @@ Journal entries are chained so each session loads with full context in one read.
   slug, e.g. `Fig4-description.pdf` or `FigS2-description.pdf`.
 - Name figure scripts in `repository/plots/` to match: `Fig4-description.py`,
   `FigS2-description.py`, etc.
-- When a figure script in `repository/` is ready, created, or updated, place
-  the generated SVG in `manuscript/svg/` for the author's final Inkscape
-  touch-up. Keep the reproducible script and model code in `repository/`.
+- Figure scripts must generate SVG, PDF, and PNG outputs. Use the PNG for visual
+  inspection.
+- When a new figure from `repository/` is ready to be included in the manuscript,
+  move its SVG to `manuscript/svg/` for the author's final touch-up in Inkscape
+  before exporting it as a PDF. Keep the reproducible script and model code in
+  `repository/`.
 - Name model modules descriptively (e.g. `projected_model.py`, `observables.py`).
 - Analytics scripts in `repository/analytics/` must be self-contained and end
   with `assert`-style checks against the closed-form results in the paper.

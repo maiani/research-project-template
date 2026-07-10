@@ -32,6 +32,8 @@ Add `--overleaf-url "<url-or-project-id>"` when an Overleaf project already
 exists. Run `./bootstrap.sh --check` to validate the untouched template, or
 `./tests/smoke-bootstrap.sh` to exercise the full bootstrap in a temporary copy.
 
-Bootstrap replaces the template placeholders, initializes the project layout,
-and removes bootstrap-only material. It never promotes exploratory work from
+Bootstrap replaces the template placeholders, initializes `repository/` and
+`manuscript/` as separate Git repositories, and removes bootstrap-only material.
+When no Overleaf URL is supplied, the local manuscript repository is ready to
+receive an Overleaf remote later. Bootstrap never promotes exploratory work from
 `workspace/` into `repository/`.

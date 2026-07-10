@@ -19,12 +19,15 @@ rm -rf "$COPY/.git" "$COPY/repository/.git" "$COPY/manuscript/.git"
 
 (
     cd "$COPY"
+    GIT_AUTHOR_NAME="Bootstrap Test" \
+    GIT_AUTHOR_EMAIL="bootstrap@example.invalid" \
+    GIT_COMMITTER_NAME="Bootstrap Test" \
+    GIT_COMMITTER_EMAIL="bootstrap@example.invalid" \
     BOOTSTRAP_DATE="$DATE" ./bootstrap.sh \
         --slug "$SLUG" \
         --title "Bootstrap Smoke Test" \
         --author "Test Author" \
-        --desc "End-to-end bootstrap validation" \
-        --no-commit
+        --desc "End-to-end bootstrap validation"
 )
 
 [[ ! -e "$COPY/bootstrap.sh" ]]
@@ -37,7 +40,15 @@ rm -rf "$COPY/.git" "$COPY/repository/.git" "$COPY/manuscript/.git"
 [[ -f "$COPY/bibliography/$SLUG.bib" ]]
 [[ ! -e "$COPY/bibliography/project-slug.bib" ]]
 [[ -d "$COPY/repository/.git" ]]
+[[ -d "$COPY/manuscript/.git" ]]
 [[ -f "$COPY/manuscript/.gitignore" ]]
+
+git -C "$COPY/repository" rev-parse --verify HEAD >/dev/null
+git -C "$COPY/manuscript" rev-parse --verify HEAD >/dev/null
+if [[ -n "$(git -C "$COPY" ls-files repository manuscript)" ]]; then
+    printf 'ERROR: nested repositories are tracked by the root repository\n' >&2
+    exit 1
+fi
 
 grep -Fq "# Bootstrap Smoke Test" "$COPY/project.md"
 grep -Fq "Test Author" "$COPY/project.md"

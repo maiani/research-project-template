@@ -5,6 +5,13 @@ paper, dataset, or public-code release created from the template.
 
 ## 1.1 — 2026-07-10
 
+- Made manuscript bootstrapping create a committed nested Git repository when
+  no Overleaf remote is supplied, and always removed both nested repositories
+  from the root index.
+- Standardized journaling on one file per day with explicit daily discovery and
+  same-day append behavior.
+- Required figure scripts to generate SVG, PDF, and PNG outputs, with PNG used
+  for inspection and finalized SVGs moved into the manuscript for touch-up.
 - Made the workflow version visible in `AGENTS.md` and the root `README.md`.
 - Clarified the boundary between private exploration, finalized public code,
   and the manuscript.

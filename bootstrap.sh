@@ -344,12 +344,32 @@ initialise_public_repository() {
     git -C "$REPO_ROOT/repository" commit -m "Initialise reproducibility repository"
 }
 
+initialise_local_manuscript_repository() {
+    local repo_top
+
+    info "initialising local manuscript repository..."
+    repo_top="$(git -C "$REPO_ROOT/manuscript" rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ "$repo_top" != "$REPO_ROOT/manuscript" ]]; then
+        git -C "$REPO_ROOT/manuscript" init -b main
+    fi
+
+    if [[ "$NO_COMMIT" -eq 1 ]]; then
+        info "--no-commit supplied; leaving manuscript/ uncommitted."
+        return
+    fi
+
+    git -C "$REPO_ROOT/manuscript" add -A
+    if git -C "$REPO_ROOT/manuscript" diff --cached --quiet; then
+        info "no manuscript/ git changes to commit."
+        return
+    fi
+    git -C "$REPO_ROOT/manuscript" commit -m "Initialise manuscript repository"
+}
+
 drop_root_index_for_nested_repos() {
     in_git_work_tree || return 0
     git -C "$REPO_ROOT" rm -r --cached --ignore-unmatch repository >/dev/null 2>&1 || true
-    if [[ -n "$OVERLEAF_INPUT" ]]; then
-        git -C "$REPO_ROOT" rm -r --cached --ignore-unmatch manuscript >/dev/null 2>&1 || true
-    fi
+    git -C "$REPO_ROOT" rm -r --cached --ignore-unmatch manuscript >/dev/null 2>&1 || true
 }
 
 commit_changes() {
@@ -405,6 +425,14 @@ connect_overleaf() {
     rm -rf "$template_dir"
 }
 
+initialise_manuscript_repository() {
+    if [[ -n "$OVERLEAF_INPUT" ]]; then
+        connect_overleaf
+    else
+        initialise_local_manuscript_repository
+    fi
+}
+
 # -- 2. Preflight before any mutations ---------------------------------------
 preflight
 if [[ "$CHECK" -eq 1 ]]; then
@@ -446,11 +474,11 @@ cleanup_bootstrap_assets
 info "auditing unresolved template placeholders..."
 placeholder_audit
 
-# -- 6. Initialise nested repos, commit root, and optional Overleaf setup -----
+# -- 6. Initialise nested repos and commit the root ---------------------------
 initialise_public_repository
+initialise_manuscript_repository
 drop_root_index_for_nested_repos
 commit_changes
-connect_overleaf
 
 # -- 7. Done -----------------------------------------------------------------
 printf '\n'
@@ -458,7 +486,7 @@ info "Done! $PROJECT_SLUG is ready."
 printf '\n'
 info "Next steps:"
 printf '    - Edit project.md with your full description.\n'
-printf '    - Link manuscript/ to your Overleaf git remote if not already connected.\n'
+printf '    - Add an Overleaf remote to manuscript/ if one is not already connected.\n'
 printf '    - Start exploring in workspace/.\n'
 printf '    - When calculations stabilise, promote code to repository/.\n'
 printf '\n'
