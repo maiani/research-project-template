@@ -2,17 +2,21 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.0000000.svg)](https://doi.org/10.5281/zenodo.0000000)
 
-Code accompanying the manuscript above. The repository contains symbolic-verification
-scripts for the key algebraic results and the figure-generation pipeline for all
-main-text and supplemental panels.
+Code accompanying the manuscript above. This repository contains the finalized,
+reproducible scripts used to generate the paper's calculations, checks, and
+figures.
 
 ---
 
 ## Repository structure
 
+This is the planned public-code structure. Empty directories are created during
+bootstrap so early projects have a stable place for finalized analytics and plot
+scripts.
+
 ```
 .
-├── analytics/       SymPy verification of analytic results
+├── analytics/       self-contained checks and analytic verification scripts
 ├── plots/           model modules and figure-generation scripts
 │   └── figures/     generated output (git-ignored; reproducible from scripts)
 ├── pixi.toml        reproducible environment
@@ -20,7 +24,8 @@ main-text and supplemental panels.
 ```
 
 ### `analytics/`
-SymPy scripts that verify the closed-form expressions quoted in the paper.
+Self-contained scripts that verify closed-form expressions, limiting cases, or
+other analytic results quoted in the paper.
 
 ### `plots/`
 

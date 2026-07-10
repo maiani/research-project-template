@@ -1,0 +1,98 @@
+\documentclass[aps, prl, superscriptaddress, 10pt]{revtex4-2}
+\usepackage{graphicx, hyperref, bm, epstopdf, mathrsfs}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath, amssymb, bm}
+\usepackage{soul}
+\usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage{changepage}
+
+\newcommand{\dd}[0]{\mathrm{d}}
+
+\definecolor{referee-color}{rgb}{0.36, 0.54, 0.66}
+\colorlet{referee-backcolor}{referee-color!10!white}
+\DeclareRobustCommand{\refereehighlight}[1]{{\sethlcolor{referee-backcolor}\hl{#1}}}
+\newcommand{\refereekey}{\textcolor{referee-color}{\sethlcolor{referee-backcolor}\hl{Referee}}}
+
+\tcbset{textmarker/.style={%
+        enhanced,
+        parbox=false,boxrule=0mm,boxsep=0mm,arc=0mm,
+        outer arc=0mm,left=6mm,right=3mm,top=7pt,bottom=7pt,
+        toptitle=1mm,bottomtitle=1mm,oversize}}
+
+\newtcolorbox{refereeBox}{textmarker, breakable,
+    borderline west={6pt}{0pt}{referee-color},
+    colback=referee-backcolor}
+
+\newcommand{\referee}[1]{\begin{refereeBox} \textbf{Referee:} #1 \end{refereeBox}}
+
+\definecolor{response-color}{rgb}{0.30, 0.60, 0.44}
+\colorlet{response-backcolor}{response-color!10!white}
+
+\newtcolorbox{responseBox}{textmarker, breakable,
+    borderline west={6pt}{0pt}{response-color},
+    colback=response-backcolor}
+
+\newcommand{\response}[1]{\begin{responseBox} \textbf{Response:} #1 \end{responseBox}}
+\newcommand{\responsekey}{\textcolor{response-color}{\sethlcolor{response-backcolor}\hl{Response}}}
+
+
+\definecolor{quote-color}{rgb}{0.30, 0.30, 1.00}
+\newenvironment{paperquote}
+{
+    \vspace{1em}
+    \begin{adjustwidth}{2.5em}{2.5em}
+    \color{quote-color}
+    \itshape
+    \ignorespaces
+}
+{
+    \end{adjustwidth}
+    \vspace{1em}
+}
+
+
+
+\begin{document}
+
+\title{Response to Referees for ``A beautiful paper''}
+
+\maketitle
+
+Dear Editors,\\
+
+Thank you for your message containing the referee reports for our manuscript.\\
+
+We thank the Referees for carefully reading our manuscript and for their
+constructive comments. We have revised the manuscript to address the points
+raised in the reports, with particular attention to the validity, novelty,
+importance, interest, and presentation of the results.\\
+
+With kind regards,\\
+
+The authors
+
+\newpage
+
+The referee reports are highlighted in \refereekey, and our responses are shown
+below in \responsekey. Quoted changes to the manuscript are shown in
+\textit{\textcolor{quote-color}{blue}}.
+We also include a marked-up PDF of the manuscript and supplemental material showing the changes from the original submission.
+
+\section{Reply to Referee A}
+
+\referee{
+A referee question.
+}
+
+\response{
+The authors' response.
+
+\begin{paperquote}
+A paragraph edited.
+\end{paperquote}
+}
+
+\end{document}

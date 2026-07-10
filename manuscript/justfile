@@ -1,8 +1,8 @@
 latex_aux_exts := "aux bbl blg fdb_latexmk fls log out run.xml synctex.gz toc"
 
-main_file := "paper.tex"
-sm_file := "paper_sm.tex"
-response_file := "peer_review/rebuttal.tex"
+main := "{{ PROJECT_SLUG }}.tex"
+sm := "{{ PROJECT_SLUG }}_sm.tex"
+rebuttal := ""
 
 # ── Shared bash function library ──────────────────────────────────────
 _latex_helpers := '''
@@ -45,22 +45,33 @@ cleanup_latex_base_in_dir() {
 
 # ── Individual compiles ──────────────────────────────────────────────
 
-# Compile one TeX file and remove auxiliary build files afterward.
-compile tex_file:
+# Compile a configured manuscript target: main, sm, or rebuttal.
+compile target:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	{{_latex_helpers}}
-	tex_file="{{tex_file}}"
+	target="{{target}}"
+	case "$target" in
+		main) tex_file="{{main}}" ;;
+		sm) tex_file="{{sm}}" ;;
+		rebuttal) tex_file="{{rebuttal}}" ;;
+		*)
+			printf 'WARNING: unknown compile target "%s"; expected main, sm, or rebuttal. Nothing to do.\n' "$target" >&2
+			exit 0
+			;;
+	esac
+	if [[ -z "$tex_file" ]]; then
+		printf 'WARNING: compile target "%s" is not configured. Nothing to do.\n' "$target" >&2
+		exit 0
+	fi
+	if [[ ! -f "$tex_file" ]]; then
+		printf 'WARNING: %s does not exist yet. Nothing to do.\n' "$tex_file" >&2
+		exit 0
+	fi
 	base="${tex_file%.tex}"
 	latexmk -cd -pdf -interaction=nonstopmode "$tex_file"
 	latexmk -cd -c "$tex_file" >/dev/null 2>&1 || true
 	cleanup_latex_base "$base" "{{latex_aux_exts}}"
-
-compile-main: (compile main_file)
-
-compile-sm: (compile sm_file)
-
-compile-response: (compile response_file)
 
 # ── Latexdiff recipes ────────────────────────────────────────────────
 
@@ -70,6 +81,7 @@ gen-diffs old_dir:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	{{_latex_helpers}}
+	[[ -d "{{old_dir}}" ]] || { printf 'ERROR: old_dir does not exist: %s\n' "{{old_dir}}" >&2; exit 2; }
 	wrote=()
 	for tex_file in *.tex; do
 		[[ "$tex_file" == *_diff.tex ]] && continue
