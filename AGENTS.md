@@ -24,6 +24,11 @@ for the project context — what this paper is, its current status, and physics 
 - **`repository/` is the public artifact — finalized code only.** It must stay
   complete and reproducible (it ships with the paper). It is a separate nested
   git repository; the private root repo should not track it.
+- **Work on `repository/` revisions in a local branch.** When updating the
+  published repo (e.g. addressing referee comments or preparing a new
+  revision), do the work on a local branch inside `repository/`, not directly
+  on `main`. Only merge into `main` as a single squashed commit once the
+  revision is public (e.g. the new arXiv version). Until then `main` should keep reflecting the last publicly released state.
 - **Promotion is the author's call.** Code/plots move from `workspace/` to
   `repository/` only when a calculation is finalized AND the author explicitly
   decides to promote it. Don't move work into the published repo autonomously —
