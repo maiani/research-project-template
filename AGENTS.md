@@ -55,6 +55,16 @@ for the project context — what this paper is, its current status, and physics 
 So a typical task flows: derive + compute (workspace) → [author promotes] → finalized
 script + figure (code) → manuscript (paper).
 
+## Manuscript formatting
+
+- Run manuscript formatting commands from `manuscript/`: `just format` formats
+  tracked LaTeX sources and `just format-check` checks them without editing.
+- Run `just install-hooks` once in each local manuscript clone to enable the
+  pinned `tex-fmt` pre-commit hook. Git hooks are local and are not installed by
+  cloning or run by Overleaf.
+- Keep automatic line wrapping disabled so prose paragraphs remain stable in
+  diffs. Generated `*_diff.tex` files are excluded from formatting.
+
 ## Journaling
 
 Journal entries are chained by day so each session loads with full context in one read.

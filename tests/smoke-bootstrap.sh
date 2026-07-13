@@ -42,6 +42,11 @@ rm -rf "$COPY/.git" "$COPY/repository/.git" "$COPY/manuscript/.git"
 [[ -d "$COPY/repository/.git" ]]
 [[ -d "$COPY/manuscript/.git" ]]
 [[ -f "$COPY/manuscript/.gitignore" ]]
+[[ -f "$COPY/manuscript/.pre-commit-config.yaml" ]]
+[[ -f "$COPY/manuscript/tex-fmt.toml" ]]
+grep -Fq 'repo: https://github.com/WGUNDERWOOD/tex-fmt' "$COPY/manuscript/.pre-commit-config.yaml"
+grep -Fq 'wrap = false' "$COPY/manuscript/tex-fmt.toml"
+grep -Fq 'format-check:' "$COPY/manuscript/justfile"
 
 git -C "$COPY/repository" rev-parse --verify HEAD >/dev/null
 git -C "$COPY/manuscript" rev-parse --verify HEAD >/dev/null

@@ -37,3 +37,7 @@ Bootstrap replaces the template placeholders, initializes `repository/` and
 When no Overleaf URL is supplied, the local manuscript repository is ready to
 receive an Overleaf remote later. Bootstrap never promotes exploratory work from
 `workspace/` into `repository/`.
+
+The generated manuscript repository includes a pinned `tex-fmt` pre-commit
+configuration. From `manuscript/`, run `just install-hooks` once per clone,
+`just format` to format tracked LaTeX sources, or `just format-check` to check them.

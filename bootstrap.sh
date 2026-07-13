@@ -214,6 +214,8 @@ check_template() {
     require_placeholder "$REPO_ROOT/repository/pixi.toml" "{{ AUTHOR }}"
     require_placeholder "$REPO_ROOT/repository/pixi.toml" "{{ PROJECT_SLUG }}"
     require_placeholder "$REPO_ROOT/manuscript/justfile" "{{ PROJECT_SLUG }}"
+    require_file "$REPO_ROOT/manuscript/.pre-commit-config.yaml"
+    require_file "$REPO_ROOT/manuscript/tex-fmt.toml"
     require_placeholder "$REPO_ROOT/bootstrap/manuscript.gitignore" "{{ PROJECT_SLUG }}"
     require_file "$BIB_TEMPLATE"
     grep -Fq "## Bootstrapping a new project" "$REPO_ROOT/AGENTS.md" \
@@ -241,6 +243,8 @@ preflight() {
     require_file "$REPO_ROOT/repository/README.md"
     require_file "$REPO_ROOT/repository/pixi.toml"
     require_file "$REPO_ROOT/manuscript/justfile"
+    require_file "$REPO_ROOT/manuscript/.pre-commit-config.yaml"
+    require_file "$REPO_ROOT/manuscript/tex-fmt.toml"
 
     if [[ -d "$REPO_ROOT/bootstrap" ]]; then
         require_file "$REPO_ROOT/bootstrap/manuscript.gitignore"
@@ -396,30 +400,28 @@ commit_changes() {
 connect_overleaf() {
     [[ -n "$OVERLEAF_INPUT" ]] || return 0
 
-    local remote template_dir clone_dir
+    local remote template_dir clone_dir template_file
     remote="$(normalize_overleaf_remote "$OVERLEAF_INPUT")"
     info "cloning Overleaf remote into manuscript/: $remote"
 
     template_dir="$(mktemp -d "${TMPDIR:-/tmp}/research-template-manuscript.XXXXXX")"
     clone_dir="$(mktemp -d "${TMPDIR:-/tmp}/overleaf-manuscript.XXXXXX")"
 
-    if [[ -f "$REPO_ROOT/manuscript/justfile" ]]; then
-        cp "$REPO_ROOT/manuscript/justfile" "$template_dir/justfile"
-    fi
-    if [[ -f "$REPO_ROOT/manuscript/.gitignore" ]]; then
-        cp "$REPO_ROOT/manuscript/.gitignore" "$template_dir/.gitignore"
-    fi
+    for template_file in justfile .gitignore .pre-commit-config.yaml tex-fmt.toml; do
+        if [[ -f "$REPO_ROOT/manuscript/$template_file" ]]; then
+            cp "$REPO_ROOT/manuscript/$template_file" "$template_dir/$template_file"
+        fi
+    done
 
     git clone "$remote" "$clone_dir"
     rm -rf "$REPO_ROOT/manuscript"
     mv "$clone_dir" "$REPO_ROOT/manuscript"
 
-    if [[ -f "$template_dir/justfile" && ! -f "$REPO_ROOT/manuscript/justfile" ]]; then
-        cp "$template_dir/justfile" "$REPO_ROOT/manuscript/justfile"
-    fi
-    if [[ -f "$template_dir/.gitignore" && ! -f "$REPO_ROOT/manuscript/.gitignore" ]]; then
-        cp "$template_dir/.gitignore" "$REPO_ROOT/manuscript/.gitignore"
-    fi
+    for template_file in justfile .gitignore .pre-commit-config.yaml tex-fmt.toml; do
+        if [[ -f "$template_dir/$template_file" && ! -f "$REPO_ROOT/manuscript/$template_file" ]]; then
+            cp "$template_dir/$template_file" "$REPO_ROOT/manuscript/$template_file"
+        fi
+    done
     mkdir -p "$REPO_ROOT/manuscript/svg"
 
     rm -rf "$template_dir"

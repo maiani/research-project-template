@@ -3,6 +3,14 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## Unreleased
+
+- Added pinned `tex-fmt` formatting and pre-commit configuration to generated
+  manuscript repositories, with wrapping disabled and generated latexdiff
+  sources excluded.
+- Added explicit manuscript recipes for formatting, checking, and installing
+  hooks, plus bootstrap preservation and smoke-test coverage.
+
 ## 1.1 — 2026-07-10
 
 - Made manuscript bootstrapping create a committed nested Git repository when
