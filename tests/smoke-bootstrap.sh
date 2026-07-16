@@ -15,7 +15,7 @@ trap cleanup EXIT
 
 mkdir -p "$COPY"
 cp -R "$ROOT/." "$COPY"
-rm -rf "$COPY/.git" "$COPY/repository/.git" "$COPY/manuscript/.git"
+rm -rf "$COPY/repository/.git" "$COPY/manuscript/.git"
 
 (
     cd "$COPY"
@@ -27,7 +27,8 @@ rm -rf "$COPY/.git" "$COPY/repository/.git" "$COPY/manuscript/.git"
         --slug "$SLUG" \
         --title "Bootstrap Smoke Test" \
         --author "Test Author" \
-        --desc "End-to-end bootstrap validation"
+        --desc "End-to-end bootstrap validation" \
+        --force
 )
 
 [[ ! -e "$COPY/bootstrap.sh" ]]
@@ -41,11 +42,17 @@ rm -rf "$COPY/.git" "$COPY/repository/.git" "$COPY/manuscript/.git"
 [[ ! -e "$COPY/bibliography/project-slug.bib" ]]
 [[ -d "$COPY/repository/.git" ]]
 [[ -d "$COPY/manuscript/.git" ]]
+if git -C "$COPY" remote get-url origin >/dev/null 2>&1; then
+    printf 'ERROR: inherited template remote remains after bootstrap\n' >&2
+    exit 1
+fi
 [[ -f "$COPY/manuscript/.gitignore" ]]
 [[ -f "$COPY/manuscript/.pre-commit-config.yaml" ]]
 [[ -f "$COPY/manuscript/tex-fmt.toml" ]]
 grep -Fq 'repo: https://github.com/WGUNDERWOOD/tex-fmt' "$COPY/manuscript/.pre-commit-config.yaml"
-grep -Fq 'wrap = false' "$COPY/manuscript/tex-fmt.toml"
+grep -Fq 'wrap = true' "$COPY/manuscript/tex-fmt.toml"
+grep -Fq 'join = true' "$COPY/manuscript/tex-fmt.toml"
+grep -Fq 'format_options = true' "$COPY/manuscript/tex-fmt.toml"
 grep -Fq 'format-check:' "$COPY/manuscript/justfile"
 
 git -C "$COPY/repository" rev-parse --verify HEAD >/dev/null

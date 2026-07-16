@@ -1,8 +1,16 @@
 # tex-fmt configuration
 # https://github.com/WGUNDERWOOD/tex-fmt
 
-# Keep prose paragraphs on one physical line; editors can wrap them visually.
+# Line wrapping
 wrap = true
+wraplen = 100 # maximum line length
+wrapmin = 90 # wrap break point is chosen at the first opportunity past this column
+# wrap-chars = [] # For example: ["。"]
+
+
+# Normalize short paragraphs and multiline optional arguments.
+join = true
+format_options = true
 
 # Indentation.
 tabsize = 2
@@ -13,11 +21,6 @@ format-tables = false
 
 # Terminal output: "warn" or "error".
 verbosity = "warn"
-
-# Wrapping controls. These only matter when `wrap = true`.
-wraplen = 100
-# wrapmin = 70
-# wrap-chars = [] # For example: ["。"]
 
 # Project-specific environments.
 # lists = ["myitemize"]

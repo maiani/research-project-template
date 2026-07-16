@@ -16,6 +16,10 @@ See [AGENTS.md](AGENTS.md) for the complete working rules and
 
 ## Start a project
 
+Bootstrap requires these tools on `PATH`: Git, Python 3, `just`, `tex-fmt`,
+`pre-commit`, `latexmk`, `pdflatex`, BibTeX, and `latexdiff`. It checks for all
+of them before modifying the template.
+
 Ask your AI coding agent to “start a new project” and provide the requested
 project details. The agent will run the bootstrap script for you. To run it
 directly instead:

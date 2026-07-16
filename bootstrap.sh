@@ -50,6 +50,16 @@ require_value() {
     [[ -n "$value" ]] || die "$flag requires a value"
 }
 
+require_tools() {
+    local tool
+    local missing=()
+    for tool in git python3 just tex-fmt pre-commit latexmk pdflatex bibtex latexdiff; do
+        command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+    done
+    ((${#missing[@]} == 0)) \
+        || die "required tools are missing from PATH: ${missing[*]}"
+}
+
 # -- 1. Parse flags -----------------------------------------------------------
 PROJECT_SLUG=""
 PAPER_TITLE=""
@@ -228,8 +238,7 @@ check_template() {
 }
 
 preflight() {
-    command -v git >/dev/null 2>&1 || die "git is required"
-    command -v python3 >/dev/null 2>&1 || die "python3 is required for safe placeholder replacement"
+    require_tools
 
     require_dir "$REPO_ROOT/manuscript"
     require_dir "$REPO_ROOT/manuscript/svg"
@@ -324,6 +333,14 @@ if marker not in text:
 before, _, _ = text.partition(marker)
 path.write_text(before.rstrip() + "\n", encoding="utf-8")
 PY
+}
+
+remove_inherited_template_remote() {
+    in_git_work_tree || return 0
+    if git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
+        info "removing inherited template remote..."
+        git -C "$REPO_ROOT" remote remove origin
+    fi
 }
 
 initialise_public_repository() {
@@ -472,6 +489,7 @@ replace_placeholder "$REPO_ROOT/manuscript/justfile" "{{ PROJECT_SLUG }}" "$PROJ
 info "cleaning up bootstrap assets..."
 remove_bootstrap_instructions
 cleanup_bootstrap_assets
+remove_inherited_template_remote
 
 info "auditing unresolved template placeholders..."
 placeholder_audit
