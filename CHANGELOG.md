@@ -6,8 +6,8 @@ paper, dataset, or public-code release created from the template.
 ## Unreleased
 
 - Added pinned `tex-fmt` formatting and pre-commit configuration to generated
-  manuscript repositories, with wrapping disabled and generated latexdiff
-  sources excluded.
+  manuscript repositories, using semantic line breaks (`reflow = "semantic"`)
+  for prose and excluding generated latexdiff sources.
 - Added explicit manuscript recipes for formatting, checking, and installing
   hooks, plus bootstrap preservation and smoke-test coverage.
 

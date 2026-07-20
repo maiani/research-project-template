@@ -1,16 +1,17 @@
 # tex-fmt configuration
 # https://github.com/WGUNDERWOOD/tex-fmt
 
-# Line wrapping
+# Line wrapping — semantic line breaks (https://sembr.org).
+# reflow = "semantic" starts each sentence/clause on its own line so prose diffs
+# stay minimal; over-long lines still wrap at wraplen as a backstop.
 wrap = true
-wraplen = 100 # maximum line length
+reflow = "semantic"
+wraplen = 100 # backstop maximum line length
 wrapmin = 90 # wrap break point is chosen at the first opportunity past this column
 # wrap-chars = [] # For example: ["。"]
 
-
-# Normalize short paragraphs and multiline optional arguments.
-join = true
-format_options = true
+# Put each item in multiline optional arguments on its own line.
+format-options = true
 
 # Indentation.
 tabsize = 2

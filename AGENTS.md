@@ -62,8 +62,13 @@ script + figure (code) → manuscript (paper).
 - Run `just install-hooks` once in each local manuscript clone to enable the
   pinned `tex-fmt` pre-commit hook. Git hooks are local and are not installed by
   cloning or run by Overleaf.
-- Keep automatic line wrapping disabled so prose paragraphs remain stable in
-  diffs. Generated `*_diff.tex` files are excluded from formatting.
+- We adopt **semantic line breaks** ([sembr.org](https://sembr.org)) for prose:
+  each sentence (and long clause) starts on its own line so edits produce
+  minimal, localized diffs. The formatter enforces this via `reflow = "semantic"`
+  in `tex-fmt.toml`; over-long lines still wrap at `wraplen` as a backstop. When
+  writing or editing LaTeX prose, break lines at sentence/clause boundaries
+  rather than filling columns. Generated `*_diff.tex` files are excluded from
+  formatting.
 
 ## Journaling
 
