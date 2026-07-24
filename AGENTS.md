@@ -1,74 +1,59 @@
 # AI agent instructions — academic research
 
-**Academic Research Workflow version:** 1.1
+**Academic Research Workflow version:** 1.2
 
 This is the working root for an academic research paper. Read [project.md](project.md)
 for the project context — what this paper is, its current status, and physics goals.
 
-## Layout
+## Project boundaries
 
-| Folder | Role | Versioning | Ships in release? |
-|---|---|---|---|---|
-| `repository/` | **Finalized** code — complete & reproducible, published with the paper | nested git → public repo | **Yes** |
-| `manuscript/` | The manuscript (LaTeX) | nested Overleaf git | Uploaded on arXiv |
-| `workspace/` | Exploration & draft code, computation, notes, evidence | tracked by the root repo | **No** |
-| `bibliography/` | Project bibliography (superset of the manuscript) | BibTeX tracked by the root repo | **No** |
-| `journal/` | Session log — one dated file per day | tracked by the root repo | **No** |
+| Folder | Purpose | Versioning and release |
+|---|---|---|
+| `workspace/` | Private, personal exploration: draft code, computations, notes, and evidence | Private root repo; never shared or released |
+| `repository/` | Shared/public artifact: reproducible code, documentation, and accompanying material | Nested shared repo; release contents as appropriate |
+| `manuscript/` | Authoritative LaTeX manuscript | Nested Overleaf repo; uploaded to arXiv |
+| `bibliography/` | Project bibliography, including sources beyond those cited in the manuscript | Private root repo |
+| `journal/` | Daily chained session log | Private root repo |
 
-## Working rules
+- `repository/` must never import from or reference `workspace/`.
+  Shared code and plots must be complete and reproducible; documentation and
+  supporting material must be organized and ready for collaborators.
+- Treat an existing Overleaf remote as authoritative for `manuscript/`.
+  Otherwise use the local manuscript repository created during setup and add
+  the remote later.
+- New physics results remain hypotheses until verified analytically or
+  numerically.
+  Report honestly when an effect is fragile.
 
-- **`workspace/` is private and never released.** New ideas, derivations,
-  **exploratory and draft code, computations**, and accumulated evidence live here.
-  This is where calculations and plots are first developed. The public code repo
-  must never import from or reference it. Build artifacts are git-ignored.
-- **`repository/` is the public artifact — finalized code only.** It must stay
-  complete and reproducible (it ships with the paper). It is a separate nested
-  git repository; the private root repo should not track it.
-- **Work on `repository/` revisions in a local branch.** When updating the
-  published repo (e.g. addressing referee comments or preparing a new
-  revision), do the work on a local branch inside `repository/`, not directly
-  on `main`. Only merge into `main` as a single squashed commit once the
-  revision is public (e.g. the new arXiv version). Until then `main` should keep reflecting the last publicly released state.
-- **Promotion is the author's call.** Code/plots move from `workspace/` to
-  `repository/` only when a calculation is finalized AND the author explicitly
-  decides to promote it. Don't move work into the published repo autonomously —
-  propose it and wait for the call.
-- **`manuscript/` is its own Git repository.** When an Overleaf project exists,
-  treat its Git remote as authoritative and clone it into `manuscript/`. Otherwise,
-  use the local repository created during project setup and add an Overleaf remote later.
+## Promotion and revisions
 
-- **Evidence-before-claims:** new physics results are hypotheses until verified
-  analytically or numerically. Confirm an effect is real (and report honestly if it's fragile)
-  before a statements commits to it.
+- Promotion is the author's call.
+  Move code and plots from `workspace/` to `repository/` only after the
+  calculation is finalized and the author explicitly approves it.
+  Move documentation and accompanying material when the author decides they are
+  ready to share.
+- Develop revisions on a branch inside `repository/`, never directly on `main`.
+  The branch may be shared with collaborators.
+  Squash-merge it into `main` only when the revision becomes public, so `main`
+  continues to represent the latest released state.
 
-## How the three folders interact (revision workflow)
+The normal flow is private derivation and computation (`workspace/`) → author
+promotion → shared code and material (`repository/`) → paper
+(`manuscript/`).
 
-1. **Derive, compute & explore in `workspace/`** — analytic notes work out the
-   symmetry/algebra and end with a takeaway, and draft figure/calculation code is developed and run here. This is where a result is
-   first established and verified.
-2. **Promote finalized code to `repository/`** — once a calculation is done and
-   the author calls it, the script moves to the published repo.
-3. **Fold into `manuscript/`** — the verified result becomes a main-text sentence/panel
-   (kept minimal) plus the bulk in Supplemental Material, and a point in the
-   response letter if the paper is in review process.
+## Manuscript source and optional formatting
 
-So a typical task flows: derive + compute (workspace) → [author promotes] → finalized
-script + figure (code) → manuscript (paper).
-
-## Manuscript formatting
-
-- Run manuscript formatting commands from `manuscript/`: `just format` formats
-  tracked LaTeX sources and `just format-check` checks them without editing.
-- Run `just install-hooks` once in each local manuscript clone to enable the
-  pinned `tex-fmt` pre-commit hook. Git hooks are local and are not installed by
-  cloning or run by Overleaf.
-- We adopt **semantic line breaks** ([sembr.org](https://sembr.org)) for prose:
-  each sentence (and long clause) starts on its own line so edits produce
-  minimal, localized diffs. The formatter enforces this via `reflow = "semantic"`
-  in `tex-fmt.toml`; over-long lines still wrap at `wraplen` as a backstop. When
-  writing or editing LaTeX prose, break lines at sentence/clause boundaries
-  rather than filling columns. Generated `*_diff.tex` files are excluded from
-  formatting.
+- Use **semantic line breaks** ([sembr.org](https://sembr.org)) for prose:
+  start each sentence, and useful long clauses, on a new source line.
+  Preserve this convention manually even when no formatter is installed.
+- `tex-fmt` integration is optional.
+  When it is installed, run `just format` or `just format-check` from
+  `manuscript/`; both use the repository's `tex-fmt.toml` and exclude generated
+  `*_diff.tex` files.
+- The pre-commit formatter hook is also opt-in.
+  Run `just install-hooks` only when desired and when `pre-commit` is installed.
+  Hooks are local to each clone and are not installed by cloning or run by
+  Overleaf.
 
 ## Journaling
 

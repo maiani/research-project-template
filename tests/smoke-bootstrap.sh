@@ -4,7 +4,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/research-workflow-smoke.XXXXXX")"
-COPY="$TMP_ROOT/template"
+# Exercise the path quoting needed for Windows checkouts under directories such
+# as "C:/Users/First Last/Documents".
+COPY="$TMP_ROOT/template with spaces"
 SLUG="smoke-project"
 DATE="2030-01-02"
 
@@ -47,18 +49,23 @@ if git -C "$COPY" remote get-url origin >/dev/null 2>&1; then
     exit 1
 fi
 [[ -f "$COPY/manuscript/.gitignore" ]]
+[[ -f "$COPY/manuscript/.gitattributes" ]]
 [[ -f "$COPY/manuscript/.pre-commit-config.yaml" ]]
 [[ -f "$COPY/manuscript/tex-fmt.toml" ]]
 grep -Fq 'repo: https://github.com/WGUNDERWOOD/tex-fmt' "$COPY/manuscript/.pre-commit-config.yaml"
 grep -Fq 'wrap = true' "$COPY/manuscript/tex-fmt.toml"
-grep -Fq 'join = true' "$COPY/manuscript/tex-fmt.toml"
-grep -Fq 'format_options = true' "$COPY/manuscript/tex-fmt.toml"
+grep -Fq 'reflow = "semantic"' "$COPY/manuscript/tex-fmt.toml"
+grep -Fq 'format-options = true' "$COPY/manuscript/tex-fmt.toml"
 grep -Fq 'format-check:' "$COPY/manuscript/justfile"
+grep -Fq 'platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]' "$COPY/repository/pixi.toml"
+[[ "$(git -C "$COPY/manuscript" check-attr eol -- justfile)" == "justfile: eol: lf" ]]
 
 git -C "$COPY/repository" rev-parse --verify HEAD >/dev/null
 git -C "$COPY/manuscript" rev-parse --verify HEAD >/dev/null
-if [[ -n "$(git -C "$COPY" ls-files repository manuscript)" ]]; then
-    printf 'ERROR: nested repositories are tracked by the root repository\n' >&2
+nested_tracked="$(git -C "$COPY" ls-files repository manuscript)"
+if [[ -n "$nested_tracked" ]]; then
+    printf 'ERROR: nested repositories are tracked by the root repository:\n%s\n' \
+        "$nested_tracked" >&2
     exit 1
 fi
 
@@ -68,7 +75,10 @@ if grep -Fiq "bootstrap" "$COPY/AGENTS.md"; then
     printf 'ERROR: bootstrap-specific references remain in AGENTS.md\n' >&2
     exit 1
 fi
-grep -Fq "Academic Research Workflow version:** 1.1" "$COPY/AGENTS.md"
+grep -Fq "Academic Research Workflow version:** 1.2" "$COPY/AGENTS.md"
+grep -Fq 'Private, personal exploration:' "$COPY/AGENTS.md"
+grep -Fq 'Shared/public artifact:' "$COPY/AGENTS.md"
+grep -Fq 'public documentation' "$COPY/repository/README.md"
 
 if command -v rg >/dev/null 2>&1; then
     if rg --no-ignore -n '\{\{[[:space:]]*[A-Z][A-Z0-9_ ]*[[:space:]]*\}\}' "$COPY" \

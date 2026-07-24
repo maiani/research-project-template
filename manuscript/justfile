@@ -131,9 +131,9 @@ compile-diffs:
 # Generate and compile latexdiff files (convenience)
 make-diffs old_dir: (gen-diffs old_dir) compile-diffs
 
-# ── Formatting ──
+# ── Optional formatting ──
 
-# Format tracked LaTeX sources with the manuscript-local configuration. Generated latexdiff sources are excluded.
+# Optionally format tracked LaTeX sources. Requires tex-fmt; generated latexdiff sources are excluded.
 format:
 	#!/usr/bin/env bash
 	set -euo pipefail
@@ -144,7 +144,7 @@ format:
 	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
 	((${#files[@]} == 0)) || tex-fmt --config tex-fmt.toml "${files[@]}"
 
-# Check formatting without modifying files.
+# Optionally check formatting without modifying files. Requires tex-fmt.
 format-check:
 	#!/usr/bin/env bash
 	set -euo pipefail
@@ -155,7 +155,7 @@ format-check:
 	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
 	((${#files[@]} == 0)) || tex-fmt --config tex-fmt.toml --check "${files[@]}"
 
-# Install the repository's pre-commit hooks in this clone.
+# Opt in to the repository's formatter hook. Requires pre-commit.
 install-hooks:
 	#!/usr/bin/env bash
 	set -euo pipefail
