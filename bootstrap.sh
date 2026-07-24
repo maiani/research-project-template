@@ -50,6 +50,29 @@ require_value() {
     [[ -n "$value" ]] || die "$flag requires a value"
 }
 
+require_tools() {
+    local tool
+    local missing=()
+
+    PYTHON_BIN=""
+    for tool in python3 python; do
+        if command -v "$tool" >/dev/null 2>&1 \
+            && "$tool" -c 'import sys; raise SystemExit(sys.version_info.major != 3)' >/dev/null 2>&1; then
+            PYTHON_BIN="$tool"
+            break
+        fi
+    done
+    [[ -n "$PYTHON_BIN" ]] || missing+=("Python 3 (python3 or python)")
+
+    # tex-fmt and pre-commit are deliberately optional; their Just recipes
+    # report a focused error only when a user chooses to invoke them.
+    for tool in git just latexmk pdflatex bibtex latexdiff; do
+        command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+    done
+    ((${#missing[@]} == 0)) \
+        || die "required tools are missing from PATH: ${missing[*]}"
+}
+
 # -- 1. Parse flags -----------------------------------------------------------
 PROJECT_SLUG=""
 PAPER_TITLE=""
@@ -60,6 +83,7 @@ OVERLEAF_INPUT=""
 NO_COMMIT=0
 FORCE=0
 CHECK=0
+PYTHON_BIN=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -131,7 +155,7 @@ replace_placeholder() {
     local placeholder="$2"
     local value="$3"
     [[ -f "$path" ]] || die "cannot replace in missing file: ${path#$REPO_ROOT/}"
-    python3 - "$path" "$placeholder" "$value" <<'PY'
+    "$PYTHON_BIN" - "$path" "$placeholder" "$value" <<'PY'
 from pathlib import Path
 import os
 import sys
@@ -158,7 +182,7 @@ PY
 }
 
 normalize_overleaf_remote() {
-    python3 - "$1" <<'PY'
+    "$PYTHON_BIN" - "$1" <<'PY'
 import re
 import sys
 
@@ -214,11 +238,14 @@ check_template() {
     require_placeholder "$REPO_ROOT/repository/pixi.toml" "{{ AUTHOR }}"
     require_placeholder "$REPO_ROOT/repository/pixi.toml" "{{ PROJECT_SLUG }}"
     require_placeholder "$REPO_ROOT/manuscript/justfile" "{{ PROJECT_SLUG }}"
+    require_file "$REPO_ROOT/manuscript/.pre-commit-config.yaml"
+    require_file "$REPO_ROOT/manuscript/tex-fmt.toml"
     require_placeholder "$REPO_ROOT/bootstrap/manuscript.gitignore" "{{ PROJECT_SLUG }}"
+    require_file "$REPO_ROOT/bootstrap/manuscript.gitattributes"
     require_file "$BIB_TEMPLATE"
     grep -Fq "## Bootstrapping a new project" "$REPO_ROOT/AGENTS.md" \
         || die "AGENTS.md is missing the bootstrap instruction section"
-    grep -Fq "Academic Research Workflow version:** 1.1" "$REPO_ROOT/AGENTS.md" \
+    grep -Fq "Academic Research Workflow version:** 1.2" "$REPO_ROOT/AGENTS.md" \
         || die "AGENTS.md is missing the workflow version"
     bash -n "$REPO_ROOT/bootstrap.sh"
     bash -n "$REPO_ROOT/tests/smoke-bootstrap.sh"
@@ -226,8 +253,7 @@ check_template() {
 }
 
 preflight() {
-    command -v git >/dev/null 2>&1 || die "git is required"
-    command -v python3 >/dev/null 2>&1 || die "python3 is required for safe placeholder replacement"
+    require_tools
 
     require_dir "$REPO_ROOT/manuscript"
     require_dir "$REPO_ROOT/manuscript/svg"
@@ -241,8 +267,11 @@ preflight() {
     require_file "$REPO_ROOT/repository/README.md"
     require_file "$REPO_ROOT/repository/pixi.toml"
     require_file "$REPO_ROOT/manuscript/justfile"
+    require_file "$REPO_ROOT/manuscript/.pre-commit-config.yaml"
+    require_file "$REPO_ROOT/manuscript/tex-fmt.toml"
 
     if [[ -d "$REPO_ROOT/bootstrap" ]]; then
+        require_file "$REPO_ROOT/bootstrap/manuscript.gitattributes"
         require_file "$REPO_ROOT/bootstrap/manuscript.gitignore"
         require_file "$REPO_ROOT/bootstrap/repository.gitignore"
     else
@@ -263,8 +292,11 @@ preflight() {
     fi
 }
 
-deploy_gitignores() {
+deploy_bootstrap_files() {
     if [[ -d "$REPO_ROOT/bootstrap" ]]; then
+        if [[ ! -f "$REPO_ROOT/manuscript/.gitattributes" ]]; then
+            cp "$REPO_ROOT/bootstrap/manuscript.gitattributes" "$REPO_ROOT/manuscript/.gitattributes"
+        fi
         if [[ ! -f "$REPO_ROOT/manuscript/.gitignore" ]]; then
             cp "$REPO_ROOT/bootstrap/manuscript.gitignore" "$REPO_ROOT/manuscript/.gitignore"
         fi
@@ -307,7 +339,7 @@ cleanup_bootstrap_assets() {
 }
 
 remove_bootstrap_instructions() {
-    python3 - "$REPO_ROOT/AGENTS.md" <<'PY'
+    "$PYTHON_BIN" - "$REPO_ROOT/AGENTS.md" <<'PY'
 from pathlib import Path
 import sys
 
@@ -322,10 +354,18 @@ path.write_text(before.rstrip() + "\n", encoding="utf-8")
 PY
 }
 
-initialise_public_repository() {
+remove_inherited_template_remote() {
+    in_git_work_tree || return 0
+    if git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
+        info "removing inherited template remote..."
+        git -C "$REPO_ROOT" remote remove origin
+    fi
+}
+
+initialise_shared_repository() {
     local repo_top
 
-    info "initialising public code repository..."
+    info "initialising shared project repository..."
     repo_top="$(git -C "$REPO_ROOT/repository" rev-parse --show-toplevel 2>/dev/null || true)"
     if [[ "$repo_top" != "$REPO_ROOT/repository" ]]; then
         git -C "$REPO_ROOT/repository" init -b main
@@ -341,7 +381,7 @@ initialise_public_repository() {
         info "no repository/ git changes to commit."
         return
     fi
-    git -C "$REPO_ROOT/repository" commit -m "Initialise reproducibility repository"
+    git -C "$REPO_ROOT/repository" commit -m "Initialise shared project repository"
 }
 
 initialise_local_manuscript_repository() {
@@ -368,8 +408,8 @@ initialise_local_manuscript_repository() {
 
 drop_root_index_for_nested_repos() {
     in_git_work_tree || return 0
-    git -C "$REPO_ROOT" rm -r --cached --ignore-unmatch repository >/dev/null 2>&1 || true
-    git -C "$REPO_ROOT" rm -r --cached --ignore-unmatch manuscript >/dev/null 2>&1 || true
+    git -C "$REPO_ROOT" rm -r -f --cached --ignore-unmatch repository >/dev/null 2>&1 || true
+    git -C "$REPO_ROOT" rm -r -f --cached --ignore-unmatch manuscript >/dev/null 2>&1 || true
 }
 
 commit_changes() {
@@ -396,30 +436,28 @@ commit_changes() {
 connect_overleaf() {
     [[ -n "$OVERLEAF_INPUT" ]] || return 0
 
-    local remote template_dir clone_dir
+    local remote template_dir clone_dir template_file
     remote="$(normalize_overleaf_remote "$OVERLEAF_INPUT")"
     info "cloning Overleaf remote into manuscript/: $remote"
 
     template_dir="$(mktemp -d "${TMPDIR:-/tmp}/research-template-manuscript.XXXXXX")"
     clone_dir="$(mktemp -d "${TMPDIR:-/tmp}/overleaf-manuscript.XXXXXX")"
 
-    if [[ -f "$REPO_ROOT/manuscript/justfile" ]]; then
-        cp "$REPO_ROOT/manuscript/justfile" "$template_dir/justfile"
-    fi
-    if [[ -f "$REPO_ROOT/manuscript/.gitignore" ]]; then
-        cp "$REPO_ROOT/manuscript/.gitignore" "$template_dir/.gitignore"
-    fi
+    for template_file in justfile .gitattributes .gitignore .pre-commit-config.yaml tex-fmt.toml; do
+        if [[ -f "$REPO_ROOT/manuscript/$template_file" ]]; then
+            cp "$REPO_ROOT/manuscript/$template_file" "$template_dir/$template_file"
+        fi
+    done
 
     git clone "$remote" "$clone_dir"
     rm -rf "$REPO_ROOT/manuscript"
     mv "$clone_dir" "$REPO_ROOT/manuscript"
 
-    if [[ -f "$template_dir/justfile" && ! -f "$REPO_ROOT/manuscript/justfile" ]]; then
-        cp "$template_dir/justfile" "$REPO_ROOT/manuscript/justfile"
-    fi
-    if [[ -f "$template_dir/.gitignore" && ! -f "$REPO_ROOT/manuscript/.gitignore" ]]; then
-        cp "$template_dir/.gitignore" "$REPO_ROOT/manuscript/.gitignore"
-    fi
+    for template_file in justfile .gitattributes .gitignore .pre-commit-config.yaml tex-fmt.toml; do
+        if [[ -f "$template_dir/$template_file" && ! -f "$REPO_ROOT/manuscript/$template_file" ]]; then
+            cp "$template_dir/$template_file" "$REPO_ROOT/manuscript/$template_file"
+        fi
+    done
     mkdir -p "$REPO_ROOT/manuscript/svg"
 
     rm -rf "$template_dir"
@@ -442,7 +480,7 @@ fi
 
 # -- 3. Deploy bootstrap files ------------------------------------------------
 info "deploying bootstrap files..."
-deploy_gitignores
+deploy_bootstrap_files
 mkdir -p "$REPO_ROOT/manuscript/svg"
 mkdir -p "$REPO_ROOT/repository/analytics" \
          "$REPO_ROOT/repository/plots/figures"
@@ -470,12 +508,13 @@ replace_placeholder "$REPO_ROOT/manuscript/justfile" "{{ PROJECT_SLUG }}" "$PROJ
 info "cleaning up bootstrap assets..."
 remove_bootstrap_instructions
 cleanup_bootstrap_assets
+remove_inherited_template_remote
 
 info "auditing unresolved template placeholders..."
 placeholder_audit
 
 # -- 6. Initialise nested repos and commit the root ---------------------------
-initialise_public_repository
+initialise_shared_repository
 initialise_manuscript_repository
 drop_root_index_for_nested_repos
 commit_changes
@@ -487,6 +526,7 @@ printf '\n'
 info "Next steps:"
 printf '    - Edit project.md with your full description.\n'
 printf '    - Add an Overleaf remote to manuscript/ if one is not already connected.\n'
-printf '    - Start exploring in workspace/.\n'
-printf '    - When calculations stabilise, promote code to repository/.\n'
+printf '    - Keep private, personal exploration in workspace/.\n'
+printf '    - Put collaborator-ready documentation and accompanying material in repository/.\n'
+printf '    - When calculations stabilise, promote finalized code to repository/.\n'
 printf '\n'

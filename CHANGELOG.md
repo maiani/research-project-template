@@ -3,6 +3,21 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## 1.2 — 2026-07-24
+
+- Clarified that `repository/` is the shared/public artifact for reproducible
+  code, documentation, and accompanying collaborator material, while
+  `workspace/` is the author's private, personal working area.
+- Added Windows support through Git Bash: Python command discovery now accepts
+  `python3` or `python`, executable shell inputs are pinned to LF line endings,
+  paths containing spaces are covered by the smoke test, and the generated Pixi
+  workspace targets Linux, macOS, and Windows.
+- Added optional, pinned `tex-fmt` and pre-commit integration to generated
+  manuscript repositories.
+  Bootstrap does not require either tool; opt-in recipes format, check, or
+  install hooks using semantic reflow while excluding generated latexdiff
+  sources.
+
 ## 1.1 — 2026-07-10
 
 - Made manuscript bootstrapping create a committed nested Git repository when

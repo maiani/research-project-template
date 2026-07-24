@@ -17,43 +17,44 @@
 \newcommand{\refereekey}{\textcolor{referee-color}{\sethlcolor{referee-backcolor}\hl{Referee}}}
 
 \tcbset{textmarker/.style={%
-        enhanced,
-        parbox=false,boxrule=0mm,boxsep=0mm,arc=0mm,
-        outer arc=0mm,left=6mm,right=3mm,top=7pt,bottom=7pt,
-        toptitle=1mm,bottomtitle=1mm,oversize}}
+    enhanced,
+    parbox=false,boxrule=0mm,boxsep=0mm,arc=0mm,
+    outer arc=0mm,left=6mm,right=3mm,top=7pt,bottom=7pt,
+toptitle=1mm,bottomtitle=1mm,oversize}}
 
 \newtcolorbox{refereeBox}{textmarker, breakable,
-    borderline west={6pt}{0pt}{referee-color},
-    colback=referee-backcolor}
+  borderline west={6pt}{0pt}{referee-color},
+colback=referee-backcolor}
 
-\newcommand{\referee}[1]{\begin{refereeBox} \textbf{Referee:} #1 \end{refereeBox}}
+\newcommand{\referee}[1]{
+  \begin{refereeBox} \textbf{Referee:} #1
+\end{refereeBox}}
 
 \definecolor{response-color}{rgb}{0.30, 0.60, 0.44}
 \colorlet{response-backcolor}{response-color!10!white}
 
 \newtcolorbox{responseBox}{textmarker, breakable,
-    borderline west={6pt}{0pt}{response-color},
-    colback=response-backcolor}
+  borderline west={6pt}{0pt}{response-color},
+colback=response-backcolor}
 
-\newcommand{\response}[1]{\begin{responseBox} \textbf{Response:} #1 \end{responseBox}}
+\newcommand{\response}[1]{
+  \begin{responseBox} \textbf{Response:} #1
+\end{responseBox}}
 \newcommand{\responsekey}{\textcolor{response-color}{\sethlcolor{response-backcolor}\hl{Response}}}
-
 
 \definecolor{quote-color}{rgb}{0.30, 0.30, 1.00}
 \newenvironment{paperquote}
 {
-    \vspace{1em}
-    \begin{adjustwidth}{2.5em}{2.5em}
+  \vspace{1em}
+  \begin{adjustwidth}{2.5em}{2.5em}
     \color{quote-color}
     \itshape
     \ignorespaces
+  }
+  {
+  \end{adjustwidth}
+  \vspace{1em}
 }
-{
-    \end{adjustwidth}
-    \vspace{1em}
-}
-
-
 
 \begin{document}
 
@@ -65,10 +66,11 @@ Dear Editors,\\
 
 Thank you for your message containing the referee reports for our manuscript.\\
 
-We thank the Referees for carefully reading our manuscript and for their
-constructive comments. We have revised the manuscript to address the points
-raised in the reports, with particular attention to the validity, novelty,
-importance, interest, and presentation of the results.\\
+We thank the Referees for carefully reading our manuscript and for their constructive
+comments.
+We have revised the manuscript to address the points raised in the reports,
+with particular attention to the validity, novelty, importance, interest, and
+presentation of the results.\\
 
 With kind regards,\\
 
@@ -76,23 +78,25 @@ The authors
 
 \newpage
 
-The referee reports are highlighted in \refereekey, and our responses are shown
-below in \responsekey. Quoted changes to the manuscript are shown in
+The referee reports are highlighted in \refereekey, and our responses are shown below in
+\responsekey.
+Quoted changes to the manuscript are shown in
 \textit{\textcolor{quote-color}{blue}}.
-We also include a marked-up PDF of the manuscript and supplemental material showing the changes from the original submission.
+We also include a marked-up PDF of the manuscript
+and supplemental material showing the changes from the original submission.
 
 \section{Reply to Referee A}
 
 \referee{
-A referee question.
+  A referee question.
 }
 
 \response{
-The authors' response.
+  The authors' response.
 
-\begin{paperquote}
-A paragraph edited.
-\end{paperquote}
+  \begin{paperquote}
+    A paragraph edited.
+  \end{paperquote}
 }
 
 \end{document}

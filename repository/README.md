@@ -2,17 +2,20 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.0000000.svg)](https://doi.org/10.5281/zenodo.0000000)
 
-Code accompanying the manuscript above. This repository contains the finalized,
-reproducible scripts used to generate the paper's calculations, checks, and
-figures.
+Shared material accompanying the manuscript above.
+This repository contains finalized reproducible scripts used to generate the
+paper's calculations, checks, and figures, together with public documentation
+and any other material intended for collaborators or release.
 
 ---
 
 ## Repository structure
 
-This is the planned public-code structure. Empty directories are created during
-bootstrap so early projects have a stable place for finalized analytics and plot
-scripts.
+This is the initial shared-repository structure.
+Empty directories are created during bootstrap so early projects have a stable
+place for finalized analytics and plot scripts.
+Add clearly named directories such as `docs/` or `materials/` as the project
+needs them for public documentation and other accompanying files.
 
 ```
 .

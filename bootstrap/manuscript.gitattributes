@@ -1,0 +1,3 @@
+# Preserve Git Bash shebangs and Just recipes in standalone manuscript clones.
+*.sh text eol=lf
+justfile text eol=lf

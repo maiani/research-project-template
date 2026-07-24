@@ -131,6 +131,37 @@ compile-diffs:
 # Generate and compile latexdiff files (convenience)
 make-diffs old_dir: (gen-diffs old_dir) compile-diffs
 
+# ── Optional formatting ──
+
+# Optionally format tracked LaTeX sources. Requires tex-fmt; generated latexdiff sources are excluded.
+format:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	command -v tex-fmt >/dev/null 2>&1 || { printf 'ERROR: tex-fmt is not installed.\n' >&2; exit 127; }
+	files=()
+	while IFS= read -r -d '' file; do
+		[[ "$file" == *_diff.tex ]] || files+=("$file")
+	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
+	((${#files[@]} == 0)) || tex-fmt --config tex-fmt.toml "${files[@]}"
+
+# Optionally check formatting without modifying files. Requires tex-fmt.
+format-check:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	command -v tex-fmt >/dev/null 2>&1 || { printf 'ERROR: tex-fmt is not installed.\n' >&2; exit 127; }
+	files=()
+	while IFS= read -r -d '' file; do
+		[[ "$file" == *_diff.tex ]] || files+=("$file")
+	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
+	((${#files[@]} == 0)) || tex-fmt --config tex-fmt.toml --check "${files[@]}"
+
+# Opt in to the repository's formatter hook. Requires pre-commit.
+install-hooks:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	command -v pre-commit >/dev/null 2>&1 || { printf 'ERROR: pre-commit is not installed.\n' >&2; exit 127; }
+	pre-commit install
+
 # ── Housekeeping ─────────────────────────────────────────────────────
 
 # Remove auxiliary build files only; keeps ALL .tex and .pdf.
