@@ -1,0 +1,9 @@
+# Badness configuration for the manuscript.
+# https://badness.dev
+
+[format]
+# Semantic line breaks preserve authored breaks and add sentence boundaries.
+wrap = "semantic"
+line-width = 100
+indent-width = 2
+line-ending = "auto"

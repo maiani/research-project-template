@@ -3,6 +3,10 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## 1.3 - [Unreleased]
+- Added the development-only `init-research-workflow` skill under `skills/`.
+- Replaced `tex-fmt` with `badness`.
+
 ## 1.2 — 2026-07-24
 
 - Clarified that `repository/` is the shared/public artifact for reproducible
@@ -12,11 +16,14 @@ paper, dataset, or public-code release created from the template.
   `python3` or `python`, executable shell inputs are pinned to LF line endings,
   paths containing spaces are covered by the smoke test, and the generated Pixi
   workspace targets Linux, macOS, and Windows.
-- Added optional, pinned `tex-fmt` and pre-commit integration to generated
+- Added optional, pinned Badness and pre-commit integration to generated
   manuscript repositories.
   Bootstrap does not require either tool; opt-in recipes format, check, or
-  install hooks using semantic reflow while excluding generated latexdiff
+  install hooks using semantic wrapping while excluding generated latexdiff
   sources.
+- Consolidated bibliography guidance in `AGENTS.md`; bootstrap now creates the
+  project BibTeX file directly instead of carrying bibliography placeholder
+  files.
 
 ## 1.1 — 2026-07-10
 

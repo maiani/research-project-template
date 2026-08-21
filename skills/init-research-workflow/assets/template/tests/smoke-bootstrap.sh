@@ -19,6 +19,20 @@ mkdir -p "$COPY"
 cp -R "$ROOT/." "$COPY"
 rm -rf "$COPY/repository/.git" "$COPY/manuscript/.git"
 
+if (
+    cd "$COPY"
+    BOOTSTRAP_DATE="$DATE" ./bootstrap.sh \
+        --slug '../escaped' \
+        --title "Rejected slug" \
+        --author "Test Author" \
+        --no-commit \
+        --force
+); then
+    printf 'ERROR: bootstrap accepted a path-traversal project slug\n' >&2
+    exit 1
+fi
+[[ ! -e "$COPY/escaped.bib" ]]
+
 (
     cd "$COPY"
     GIT_AUTHOR_NAME="Bootstrap Test" \
@@ -36,12 +50,13 @@ rm -rf "$COPY/repository/.git" "$COPY/manuscript/.git"
 [[ ! -e "$COPY/bootstrap.sh" ]]
 [[ ! -d "$COPY/bootstrap" ]]
 [[ ! -d "$COPY/tests" ]]
+[[ ! -d "$COPY/skills" ]]
 [[ ! -e "$COPY/README.md" ]]
 [[ ! -e "$COPY/CHANGELOG.md" ]]
 [[ -f "$COPY/journal/$DATE.md" ]]
 [[ ! -e "$COPY/journal/YYYY-MM-DD.md" ]]
 [[ -f "$COPY/bibliography/$SLUG.bib" ]]
-[[ ! -e "$COPY/bibliography/project-slug.bib" ]]
+grep -Fq '% Project bibliography.' "$COPY/bibliography/$SLUG.bib"
 [[ -d "$COPY/repository/.git" ]]
 [[ -d "$COPY/manuscript/.git" ]]
 if git -C "$COPY" remote get-url origin >/dev/null 2>&1; then
@@ -51,11 +66,11 @@ fi
 [[ -f "$COPY/manuscript/.gitignore" ]]
 [[ -f "$COPY/manuscript/.gitattributes" ]]
 [[ -f "$COPY/manuscript/.pre-commit-config.yaml" ]]
-[[ -f "$COPY/manuscript/tex-fmt.toml" ]]
-grep -Fq 'repo: https://github.com/WGUNDERWOOD/tex-fmt' "$COPY/manuscript/.pre-commit-config.yaml"
-grep -Fq 'wrap = true' "$COPY/manuscript/tex-fmt.toml"
-grep -Fq 'reflow = "semantic"' "$COPY/manuscript/tex-fmt.toml"
-grep -Fq 'format-options = true' "$COPY/manuscript/tex-fmt.toml"
+[[ -f "$COPY/manuscript/badness.toml" ]]
+grep -Fq 'repo: https://github.com/jolars/badness-pre-commit' "$COPY/manuscript/.pre-commit-config.yaml"
+grep -Fq 'wrap = "semantic"' "$COPY/manuscript/badness.toml"
+grep -Fq 'line-width = 100' "$COPY/manuscript/badness.toml"
+grep -Fq 'badness-format' "$COPY/manuscript/.pre-commit-config.yaml"
 grep -Fq 'format-check:' "$COPY/manuscript/justfile"
 grep -Fq 'platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]' "$COPY/repository/pixi.toml"
 [[ "$(git -C "$COPY/manuscript" check-attr eol -- justfile)" == "justfile: eol: lf" ]]
@@ -75,7 +90,7 @@ if grep -Fiq "bootstrap" "$COPY/AGENTS.md"; then
     printf 'ERROR: bootstrap-specific references remain in AGENTS.md\n' >&2
     exit 1
 fi
-grep -Fq "Academic Research Workflow version:** 1.2" "$COPY/AGENTS.md"
+grep -Fq "Academic Research Workflow version:** 1.3" "$COPY/AGENTS.md"
 grep -Fq 'Private, personal exploration:' "$COPY/AGENTS.md"
 grep -Fq 'Shared/public artifact:' "$COPY/AGENTS.md"
 grep -Fq 'public documentation' "$COPY/repository/README.md"

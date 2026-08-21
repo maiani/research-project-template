@@ -36,4 +36,3 @@ Thumbs.db
 
 # Bibliography: track .bib files, ignore reference PDFs and API caches
 /bibliography/*.files/
-/bibliography/.pynakes-cache/

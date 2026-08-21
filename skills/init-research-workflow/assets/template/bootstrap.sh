@@ -64,7 +64,7 @@ require_tools() {
     done
     [[ -n "$PYTHON_BIN" ]] || missing+=("Python 3 (python3 or python)")
 
-    # tex-fmt and pre-commit are deliberately optional; their Just recipes
+    # Badness and pre-commit are deliberately optional; their Just recipes
     # report a focused error only when a user chooses to invoke them.
     for tool in git just latexmk pdflatex bibtex latexdiff; do
         command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
@@ -107,6 +107,9 @@ if [[ "$CHECK" -eq 0 ]]; then
     [[ -z "$PAPER_TITLE" ]]  && missing+=("--title")
     [[ -z "$AUTHOR" ]]       && missing+=("--author")
     [[ ${#missing[@]} -eq 0 ]] || die "required fields missing: ${missing[*]}"
+
+    [[ "$PROJECT_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] \
+        || die "--slug must contain lowercase letters, digits, and single hyphens only"
 fi
 
 [[ -z "$DESCRIPTION" ]] && DESCRIPTION="$PAPER_TITLE"
@@ -115,7 +118,6 @@ REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 DATE_ISO="${BOOTSTRAP_DATE:-$(date +%Y-%m-%d)}"
 JOURNAL_TEMPLATE="$REPO_ROOT/journal/YYYY-MM-DD.md"
 JOURNAL_TARGET="$REPO_ROOT/journal/$DATE_ISO.md"
-BIB_TEMPLATE="$REPO_ROOT/bibliography/project-slug.bib"
 BIB_TARGET="$REPO_ROOT/bibliography/$PROJECT_SLUG.bib"
 
 in_git_work_tree() {
@@ -136,11 +138,6 @@ require_file() {
 require_dir() {
     local path="$1"
     [[ -d "$path" ]] || die "required directory is missing: ${path#$REPO_ROOT/}"
-}
-
-require_bibliography_seed() {
-    [[ -f "$BIB_TEMPLATE" || -f "$BIB_TARGET" ]] \
-        || die "neither bibliography/project-slug.bib nor bibliography/${PROJECT_SLUG}.bib exists"
 }
 
 require_placeholder() {
@@ -225,8 +222,6 @@ $matches"
 }
 
 check_template() {
-    require_file "$REPO_ROOT/README.md"
-    require_file "$REPO_ROOT/CHANGELOG.md"
     require_file "$REPO_ROOT/tests/smoke-bootstrap.sh"
     require_placeholder "$REPO_ROOT/project.md" "{{ PROJECT_TITLE }}"
     require_placeholder "$REPO_ROOT/project.md" "{{ DESCRIPTION }}"
@@ -239,13 +234,12 @@ check_template() {
     require_placeholder "$REPO_ROOT/repository/pixi.toml" "{{ PROJECT_SLUG }}"
     require_placeholder "$REPO_ROOT/manuscript/justfile" "{{ PROJECT_SLUG }}"
     require_file "$REPO_ROOT/manuscript/.pre-commit-config.yaml"
-    require_file "$REPO_ROOT/manuscript/tex-fmt.toml"
+    require_file "$REPO_ROOT/manuscript/badness.toml"
     require_placeholder "$REPO_ROOT/bootstrap/manuscript.gitignore" "{{ PROJECT_SLUG }}"
     require_file "$REPO_ROOT/bootstrap/manuscript.gitattributes"
-    require_file "$BIB_TEMPLATE"
     grep -Fq "## Bootstrapping a new project" "$REPO_ROOT/AGENTS.md" \
         || die "AGENTS.md is missing the bootstrap instruction section"
-    grep -Fq "Academic Research Workflow version:** 1.2" "$REPO_ROOT/AGENTS.md" \
+    grep -Fq "Academic Research Workflow version:** 1.3" "$REPO_ROOT/AGENTS.md" \
         || die "AGENTS.md is missing the workflow version"
     bash -n "$REPO_ROOT/bootstrap.sh"
     bash -n "$REPO_ROOT/tests/smoke-bootstrap.sh"
@@ -263,12 +257,11 @@ preflight() {
     require_dir "$REPO_ROOT/journal"
 
     require_file "$REPO_ROOT/project.md"
-    require_bibliography_seed
     require_file "$REPO_ROOT/repository/README.md"
     require_file "$REPO_ROOT/repository/pixi.toml"
     require_file "$REPO_ROOT/manuscript/justfile"
     require_file "$REPO_ROOT/manuscript/.pre-commit-config.yaml"
-    require_file "$REPO_ROOT/manuscript/tex-fmt.toml"
+    require_file "$REPO_ROOT/manuscript/badness.toml"
 
     if [[ -d "$REPO_ROOT/bootstrap" ]]; then
         require_file "$REPO_ROOT/bootstrap/manuscript.gitattributes"
@@ -317,19 +310,19 @@ move_journal_template() {
 }
 
 move_bibliography_template() {
-    if [[ -f "$BIB_TEMPLATE" && "$BIB_TEMPLATE" != "$BIB_TARGET" ]]; then
-        [[ ! -e "$BIB_TARGET" ]] || die "bibliography/${PROJECT_SLUG}.bib already exists"
-        mv "$BIB_TEMPLATE" "$BIB_TARGET"
-    elif [[ -f "$BIB_TARGET" ]]; then
+    if [[ -f "$BIB_TARGET" ]]; then
         info "bibliography/${PROJECT_SLUG}.bib already exists; leaving it in place."
     else
-        die "neither bibliography/project-slug.bib nor bibliography/${PROJECT_SLUG}.bib exists"
+        printf '%% Project bibliography.\n%% Add useful references here as the project develops.\n' \
+            > "$BIB_TARGET"
+        info "created bibliography/${PROJECT_SLUG}.bib"
     fi
 }
 
 cleanup_bootstrap_assets() {
     rm -rf "$REPO_ROOT/bootstrap"
     rm -rf "$REPO_ROOT/tests"
+    rm -rf "$REPO_ROOT/skills"
     rm -f "$REPO_ROOT/README.md" \
           "$REPO_ROOT/CHANGELOG.md" \
           "$REPO_ROOT/bootstrap.sh"
@@ -443,7 +436,7 @@ connect_overleaf() {
     template_dir="$(mktemp -d "${TMPDIR:-/tmp}/research-template-manuscript.XXXXXX")"
     clone_dir="$(mktemp -d "${TMPDIR:-/tmp}/overleaf-manuscript.XXXXXX")"
 
-    for template_file in justfile .gitattributes .gitignore .pre-commit-config.yaml tex-fmt.toml; do
+    for template_file in justfile .gitattributes .gitignore .pre-commit-config.yaml badness.toml; do
         if [[ -f "$REPO_ROOT/manuscript/$template_file" ]]; then
             cp "$REPO_ROOT/manuscript/$template_file" "$template_dir/$template_file"
         fi
@@ -453,7 +446,7 @@ connect_overleaf() {
     rm -rf "$REPO_ROOT/manuscript"
     mv "$clone_dir" "$REPO_ROOT/manuscript"
 
-    for template_file in justfile .gitattributes .gitignore .pre-commit-config.yaml tex-fmt.toml; do
+    for template_file in justfile .gitattributes .gitignore .pre-commit-config.yaml badness.toml; do
         if [[ -f "$template_dir/$template_file" && ! -f "$REPO_ROOT/manuscript/$template_file" ]]; then
             cp "$template_dir/$template_file" "$REPO_ROOT/manuscript/$template_file"
         fi

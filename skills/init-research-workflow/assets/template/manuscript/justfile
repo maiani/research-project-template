@@ -133,27 +133,27 @@ make-diffs old_dir: (gen-diffs old_dir) compile-diffs
 
 # ── Optional formatting ──
 
-# Optionally format tracked LaTeX sources. Requires tex-fmt; generated latexdiff sources are excluded.
+# Optionally format tracked LaTeX sources. Requires Badness; generated latexdiff sources are excluded.
 format:
 	#!/usr/bin/env bash
 	set -euo pipefail
-	command -v tex-fmt >/dev/null 2>&1 || { printf 'ERROR: tex-fmt is not installed.\n' >&2; exit 127; }
+	command -v badness >/dev/null 2>&1 || { printf 'ERROR: badness is not installed.\n' >&2; exit 127; }
 	files=()
 	while IFS= read -r -d '' file; do
 		[[ "$file" == *_diff.tex ]] || files+=("$file")
 	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
-	((${#files[@]} == 0)) || tex-fmt --config tex-fmt.toml "${files[@]}"
+	((${#files[@]} == 0)) || badness format --config badness.toml "${files[@]}"
 
-# Optionally check formatting without modifying files. Requires tex-fmt.
+# Optionally check formatting without modifying files. Requires Badness.
 format-check:
 	#!/usr/bin/env bash
 	set -euo pipefail
-	command -v tex-fmt >/dev/null 2>&1 || { printf 'ERROR: tex-fmt is not installed.\n' >&2; exit 127; }
+	command -v badness >/dev/null 2>&1 || { printf 'ERROR: badness is not installed.\n' >&2; exit 127; }
 	files=()
 	while IFS= read -r -d '' file; do
 		[[ "$file" == *_diff.tex ]] || files+=("$file")
 	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
-	((${#files[@]} == 0)) || tex-fmt --config tex-fmt.toml --check "${files[@]}"
+	((${#files[@]} == 0)) || badness format --config badness.toml --check "${files[@]}"
 
 # Opt in to the repository's formatter hook. Requires pre-commit.
 install-hooks:

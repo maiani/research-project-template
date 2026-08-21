@@ -1,57 +1,44 @@
-# Academic Research Workflow
+# Research Workflow Skill
 
-**Current version:** 1.2
+This repository develops the `init-research-workflow` Codex skill and its
+bundled academic research project template.
 
-This template organizes an academic paper around three working areas:
+The canonical skill is in
+[`skills/init-research-workflow/`](skills/init-research-workflow/).
+Its portable template is in
+[`skills/init-research-workflow/assets/template/`](skills/init-research-workflow/assets/template/).
 
-- `workspace/` for private, personal exploration, derivations, draft code, and
-  evidence;
-- `repository/` for finalized reproducible code, public documentation, and
-  accompanying material shared with collaborators or released with the paper;
-- `manuscript/` for the authoritative LaTeX manuscript, normally connected to
-  Overleaf.
+Use the skill from an empty target directory to collect project details, copy
+the bundled template, and initialize the project with nested manuscript and
+repository Git boundaries.
 
-Personal work stays private until the author promotes it.
-See [AGENTS.md](AGENTS.md) for the authoritative folder boundaries, promotion
-rules, and research workflow, and [CHANGELOG.md](CHANGELOG.md) for version
-history.
-
-## Start a project
-
-Bootstrap requires these tools on `PATH`: Git, Python 3, `just`, `latexmk`,
-`pdflatex`, BibTeX, and `latexdiff`.
-Python may be installed as either `python3` or `python`.
-Formatting is optional: install `tex-fmt` for `just format` and
-`just format-check`, and install `pre-commit` only if you want
-`just install-hooks`.
-
-Linux, macOS, and Windows are supported. On Windows, run the commands below
-from Git Bash (installed with Git for Windows) and install the required tools
-above on `PATH`.
-Invoke scripts with `bash`, not a system's generic `sh`.
-Generated Pixi workspaces target `linux-64`, Intel and Apple Silicon macOS, and
-`win-64`; executable shell inputs stay on LF line endings for Git Bash.
-
-Ask your AI coding agent to “start a new project” and provide the requested
-project details. The agent will run the bootstrap script for you. To run it
-directly instead:
+Development checks:
 
 ```sh
-bash ./bootstrap.sh \
-    --slug "project-slug" \
-    --title "Paper title" \
-    --author "Author name" \
-    --desc "Short project description"
+python3 /home/skdys/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/init-research-workflow
+bash skills/init-research-workflow/assets/template/bootstrap.sh --check
 ```
 
-Add `--overleaf-url "<url-or-project-id>"` when an Overleaf project already
-exists. Run `bash ./bootstrap.sh --check` to validate the untouched template,
-or `bash ./tests/smoke-bootstrap.sh` to exercise the full bootstrap in a
-temporary copy.
+The template snapshot is the source of truth for generated projects.
+Keep skill-development files outside `assets/template/`.
 
-Bootstrap replaces the template placeholders, initializes `repository/` and
-`manuscript/` as separate Git repositories, and removes bootstrap-only material.
-When no Overleaf URL is supplied, the local manuscript repository is ready to
-receive an Overleaf remote later.
-Bootstrap never promotes private personal work from `workspace/` into
-`repository/`.
+## Install the skill
+
+For development, install a symlink so changes in this repository are available
+immediately to Codex:
+
+```sh
+mkdir -p ~/.codex/skills
+ln -sfn "$PWD/skills/init-research-workflow" \
+  ~/.codex/skills/init-research-workflow
+```
+
+Open Codex in an empty target directory and run `/init-research-workflow`.
+
+For a standalone copy instead of a development symlink, replace the `ln`
+command with:
+
+```sh
+cp -a skills/init-research-workflow ~/.codex/skills/
+```

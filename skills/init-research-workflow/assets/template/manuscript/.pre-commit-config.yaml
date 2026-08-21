@@ -1,0 +1,7 @@
+repos:
+  - repo: https://github.com/jolars/badness-pre-commit
+    rev: v0.16.0
+    hooks:
+      - id: badness-format
+        args: [--config, badness.toml]
+        exclude: '(^|/).*_diff\.tex$'

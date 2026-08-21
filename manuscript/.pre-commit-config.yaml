@@ -1,7 +1,0 @@
-repos:
-  - repo: https://github.com/WGUNDERWOOD/tex-fmt
-    rev: v0.5.7
-    hooks:
-      - id: tex-fmt
-        args: [--config, tex-fmt.toml]
-        exclude: '(^|/).*_diff\.tex$'
