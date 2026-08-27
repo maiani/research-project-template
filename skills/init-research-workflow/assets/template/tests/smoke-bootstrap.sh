@@ -57,6 +57,8 @@ fi
 [[ ! -e "$COPY/journal/YYYY-MM-DD.md" ]]
 [[ -f "$COPY/bibliography/$SLUG.bib" ]]
 grep -Fq '% Project bibliography.' "$COPY/bibliography/$SLUG.bib"
+[[ -d "$COPY/workspace/scratch" ]]
+git -C "$COPY" ls-files --error-unmatch workspace/scratch/.gitkeep >/dev/null
 [[ -d "$COPY/repository/.git" ]]
 [[ -d "$COPY/manuscript/.git" ]]
 if git -C "$COPY" remote get-url origin >/dev/null 2>&1; then
@@ -65,6 +67,7 @@ if git -C "$COPY" remote get-url origin >/dev/null 2>&1; then
 fi
 [[ -f "$COPY/manuscript/.gitignore" ]]
 [[ -f "$COPY/manuscript/.gitattributes" ]]
+[[ -d "$COPY/manuscript/outreach" ]]
 [[ -f "$COPY/manuscript/.pre-commit-config.yaml" ]]
 [[ -f "$COPY/manuscript/badness.toml" ]]
 grep -Fq 'repo: https://github.com/jolars/badness-pre-commit' "$COPY/manuscript/.pre-commit-config.yaml"

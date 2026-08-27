@@ -451,7 +451,7 @@ connect_overleaf() {
             cp "$template_dir/$template_file" "$REPO_ROOT/manuscript/$template_file"
         fi
     done
-    mkdir -p "$REPO_ROOT/manuscript/svg"
+    mkdir -p "$REPO_ROOT/manuscript/outreach" "$REPO_ROOT/manuscript/svg"
 
     rm -rf "$template_dir"
 }
@@ -474,7 +474,9 @@ fi
 # -- 3. Deploy bootstrap files ------------------------------------------------
 info "deploying bootstrap files..."
 deploy_bootstrap_files
-mkdir -p "$REPO_ROOT/manuscript/svg"
+mkdir -p "$REPO_ROOT/manuscript/outreach" "$REPO_ROOT/manuscript/svg"
+mkdir -p "$REPO_ROOT/workspace/scratch"
+: > "$REPO_ROOT/workspace/scratch/.gitkeep"
 mkdir -p "$REPO_ROOT/repository/analytics" \
          "$REPO_ROOT/repository/plots/figures"
 : > "$REPO_ROOT/repository/analytics/.gitkeep"

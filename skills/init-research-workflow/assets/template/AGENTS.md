@@ -9,7 +9,7 @@ for the project context — what this paper is, its current status, and physics 
 
 | Folder | Purpose | Versioning and release |
 |---|---|---|
-| `workspace/` | Private, personal exploration: draft code, computations, notes, and evidence | Private root repo; never shared or released |
+| `workspace/` | Private, personal exploration: draft code, computations, notes, evidence, and agent experiments | Private root repo; never shared or released |
 | `repository/` | Shared/public artifact: reproducible code, documentation, and accompanying material | Nested shared repo; release contents as appropriate |
 | `manuscript/` | Authoritative LaTeX manuscript | Nested Overleaf repo; uploaded to arXiv |
 | `bibliography/` | Project bibliography, including sources beyond those cited in the manuscript | Private root repo |
@@ -18,6 +18,10 @@ for the project context — what this paper is, its current status, and physics 
 - `repository/` must never import from or reference `workspace/`.
   Shared code and plots must be complete and reproducible; documentation and
   supporting material must be organized and ready for collaborators.
+- Use `workspace/scratch/` for private agent experiments instead of an
+  untracked system temporary directory. Leave a concise trace of the inputs,
+  commands, outputs, and conclusion with each experiment; promote only
+  finalized results through the normal workflow.
 - Treat an existing Overleaf remote as authoritative for `manuscript/`.
   Otherwise use the local manuscript repository created during setup and add
   the remote later.
@@ -34,12 +38,14 @@ future work rather than filled with placeholder files.
 ```text
 .
 ├── workspace/              # private exploration, calculations, and evidence
+│   └── scratch/            # persistent agent experiments and their trace
 ├── repository/             # collaborator-ready reproducible artifact
 │   ├── analytics/          # self-contained analysis scripts
 │   └── plots/              # reproducible figure scripts and generated figures
 │       └── figures/
 ├── manuscript/             # authoritative LaTeX source
 │   ├── checkpoints/         # manuscript checkpoints and intermediate versions
+│   ├── outreach/             # manuscript-connected outreach material
 │   ├── submission/          # response letters and submission material
 │   ├── svg/                 # finalized figures for manuscript touch-up
 │   ├── badness.toml         # manuscript formatter configuration
@@ -59,6 +65,8 @@ directories unless a later instruction explicitly promotes them as artifacts.
   calculation is finalized and the author explicitly approves it.
   Move documentation and accompanying material when the author decides they are
   ready to share.
+- Keep manuscript-connected outreach material, such as lay summaries,
+  graphical abstracts, and press-ready figures, in `manuscript/outreach/`.
 - Develop revisions on a branch inside `repository/`, never directly on `main`.
   The branch may be shared with collaborators.
   Squash-merge it into `main` only when the revision becomes public, so `main`
