@@ -6,11 +6,25 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 version = "0.1.0"
 
 [dependencies]
-python = ">=3.11,<3.15"
+python = ">=3.12,<3.15"
 numpy = ">=2,<3"
 scipy = ">=1.17,<2"
 matplotlib = ">=3.10,<4"
+"svg.py" = ">=1.10,<2"
+lxml = ">=5,<7"
 sympy = ">=1.14,<2"
 tqdm = ">=4.68,<5"
+
+# Pin the pre-1.0 composition APIs; other packages retain compatibility ranges.
+[pypi-dependencies]
+figworks = "==0.8.0"
+vectex = "==0.4.0"
+
+# Notebook tooling is optional; manuscript/ uses system TeX.
+[feature.notebooks.dependencies]
 ipykernel = ">=7.3,<8"
 jupyterlab = ">=4.5,<5"
+
+[environments]
+default = { solve-group = "default" }
+notebooks = { features = ["notebooks"], solve-group = "default" }

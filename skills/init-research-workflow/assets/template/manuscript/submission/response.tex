@@ -1,4 +1,4 @@
-\documentclass[aps, prl, superscriptaddress, 10pt]{revtex4-2}
+\documentclass[aps,prl,superscriptaddress,10pt]{revtex4-2}
 \usepackage{graphicx, hyperref, bm, epstopdf, mathrsfs}
 \usepackage{float}
 \usepackage{placeins}
@@ -16,30 +16,32 @@
 \DeclareRobustCommand{\refereehighlight}[1]{{\sethlcolor{referee-backcolor}\hl{#1}}}
 \newcommand{\refereekey}{\textcolor{referee-color}{\sethlcolor{referee-backcolor}\hl{Referee}}}
 
-\tcbset{textmarker/.style={%
+\tcbset{
+  textmarker/.style={%
     enhanced,
     parbox=false,boxrule=0mm,boxsep=0mm,arc=0mm,
     outer arc=0mm,left=6mm,right=3mm,top=7pt,bottom=7pt,
-toptitle=1mm,bottomtitle=1mm,oversize}}
+    toptitle=1mm,bottomtitle=1mm,oversize}
+}
 
 \newtcolorbox{refereeBox}{textmarker, breakable,
   borderline west={6pt}{0pt}{referee-color},
-colback=referee-backcolor}
+  colback=referee-backcolor}
 
 \newcommand{\referee}[1]{
   \begin{refereeBox} \textbf{Referee:} #1
-\end{refereeBox}}
+  \end{refereeBox}}
 
 \definecolor{response-color}{rgb}{0.30, 0.60, 0.44}
 \colorlet{response-backcolor}{response-color!10!white}
 
 \newtcolorbox{responseBox}{textmarker, breakable,
   borderline west={6pt}{0pt}{response-color},
-colback=response-backcolor}
+  colback=response-backcolor}
 
 \newcommand{\response}[1]{
   \begin{responseBox} \textbf{Response:} #1
-\end{responseBox}}
+  \end{responseBox}}
 \newcommand{\responsekey}{\textcolor{response-color}{\sethlcolor{response-backcolor}\hl{Response}}}
 
 \definecolor{quote-color}{rgb}{0.30, 0.30, 1.00}
@@ -47,11 +49,11 @@ colback=response-backcolor}
 {
   \vspace{1em}
   \begin{adjustwidth}{2.5em}{2.5em}
-    \color{quote-color}
-    \itshape
-    \ignorespaces
-  }
-  {
+  \color{quote-color}
+  \itshape
+  \ignorespaces
+}
+{
   \end{adjustwidth}
   \vspace{1em}
 }

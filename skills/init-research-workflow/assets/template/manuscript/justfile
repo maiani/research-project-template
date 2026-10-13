@@ -1,135 +1,18 @@
-latex_aux_exts := "aux bbl blg fdb_latexmk fls log out run.xml synctex.gz toc"
+# Build from manuscript/; .latexmkrc owns engine and output configuration.
+# With no arguments, build the main manuscript configured in .latexmkrc.
+build *files:
+    latexmk {{files}}
 
-main := "{{ PROJECT_SLUG }}.tex"
-sm := "{{ PROJECT_SLUG }}_sm.tex"
-rebuttal := ""
+watch *files:
+    latexmk -pvc {{files}}
 
-# ── Shared bash function library ──────────────────────────────────────
-_latex_helpers := '''
-cleanup_latex_base() {
-	local base="$1"
-	local exts="$2"
-	local ext
-	for ext in $exts; do
-		rm -f "$base.$ext"
-	done
-	remove_if_untracked "${base}Notes.bib"
-}
-remove_if_untracked() {
-	local path="$1"
-	if git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
-		&& git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
-		return
-	fi
-	rm -f "$path"
-}
-prepare_bbl() {
-	local dir="$1"
-	local tex_file="$2"
-	local base="${tex_file%.tex}"
-	[[ -f "$dir/$tex_file" ]] || return
-	[[ -f "$dir/$base.bbl" ]] && return
-	(
-		cd "$dir"
-		pdflatex -draftmode -interaction=nonstopmode "$tex_file" >/dev/null 2>&1
-		bibtex "$base" >/dev/null 2>&1
-	) || true
-}
-cleanup_latex_base_in_dir() {
-	local dir="$1"
-	local base="$2"
-	local exts="$3"
-	( cd "$dir" && cleanup_latex_base "$base" "$exts" )
-}
-'''
+# Remove auxiliary files, keeping PDFs.
+clean *files:
+    latexmk -c {{files}}
 
-# ── Individual compiles ──────────────────────────────────────────────
-
-# Compile a configured manuscript target: main, sm, or rebuttal.
-compile target:
-	#!/usr/bin/env bash
-	set -euo pipefail
-	{{_latex_helpers}}
-	target="{{target}}"
-	case "$target" in
-		main) tex_file="{{main}}" ;;
-		sm) tex_file="{{sm}}" ;;
-		rebuttal) tex_file="{{rebuttal}}" ;;
-		*)
-			printf 'WARNING: unknown compile target "%s"; expected main, sm, or rebuttal. Nothing to do.\n' "$target" >&2
-			exit 0
-			;;
-	esac
-	if [[ -z "$tex_file" ]]; then
-		printf 'WARNING: compile target "%s" is not configured. Nothing to do.\n' "$target" >&2
-		exit 0
-	fi
-	if [[ ! -f "$tex_file" ]]; then
-		printf 'WARNING: %s does not exist yet. Nothing to do.\n' "$tex_file" >&2
-		exit 0
-	fi
-	base="${tex_file%.tex}"
-	latexmk -cd -pdf -interaction=nonstopmode "$tex_file"
-	latexmk -cd -c "$tex_file" >/dev/null 2>&1 || true
-	cleanup_latex_base "$base" "{{latex_aux_exts}}"
-
-# ── Latexdiff recipes ────────────────────────────────────────────────
-
-# Generate latexdiff .tex files against an earlier version.
-# Usage: just gen-diffs submissions/PRL_v1
-gen-diffs old_dir:
-	#!/usr/bin/env bash
-	set -euo pipefail
-	{{_latex_helpers}}
-	[[ -d "{{old_dir}}" ]] || { printf 'ERROR: old_dir does not exist: %s\n' "{{old_dir}}" >&2; exit 2; }
-	wrote=()
-	for tex_file in *.tex; do
-		[[ "$tex_file" == *_diff.tex ]] && continue
-		diff_file="${tex_file%.tex}_diff.tex"
-		[[ -f "{{old_dir}}/$tex_file" ]] || continue
-		base="${tex_file%.tex}"
-		old_had_bbl=0; new_had_bbl=0
-		[[ -f "{{old_dir}}/$base.bbl" ]] && old_had_bbl=1
-		[[ -f "$base.bbl" ]] && new_had_bbl=1
-		prepare_bbl "{{old_dir}}" "$tex_file"
-		prepare_bbl "." "$tex_file"
-		printf 'latexdiff %s -> %s\n' "{{old_dir}}/$tex_file" "$diff_file"
-		latexdiff --flatten "{{old_dir}}/$tex_file" "$tex_file" > "$diff_file"
-		sed -i -e 's/\\href *{\\DIFadd{\([^}]*\)}}/\\href{\1}/g' \
-			-e 's/\\url *{\\DIFadd{\([^}]*\)}}/\\url{\1}/g' "$diff_file"
-		perl -0pi -e 's/\\DIFadd\{(https?:[^}]*)\}/$1/g' "$diff_file"
-		if [[ -f "$base.bbl" ]]; then
-			CLEANBBL="$base.bbl" perl -0777 -i -pe \
-				'BEGIN{open my $f,"<",$ENV{CLEANBBL} or die; local $/; $b=<$f>; close $f} s/\\begin\{thebibliography\}.*\\end\{thebibliography\}/$b/s' \
-				"$diff_file"
-		fi
-		sed -i -E 's/\\(DIFaddendFL|DIFdelendFL) (\\(top|mid|bottom)rule)/\2 \\\1/g' "$diff_file"
-		if [[ "$old_had_bbl" -eq 0 ]]; then
-			cleanup_latex_base_in_dir "{{old_dir}}" "$base" "{{latex_aux_exts}}"
-		fi
-		if [[ "$new_had_bbl" -eq 0 ]]; then
-			cleanup_latex_base "$base" "{{latex_aux_exts}}"
-		fi
-		wrote+=("$diff_file")
-	done
-	printf 'Generated latexdiff files:\n'
-	printf '  %s\n' "${wrote[@]}"
-
-# Compile all existing *_diff.tex files to PDF
-compile-diffs:
-	#!/usr/bin/env bash
-	set -euo pipefail
-	shopt -s nullglob
-	{{_latex_helpers}}
-	for diff_file in *_diff.tex; do
-		printf 'compiling %s\n' "$diff_file"
-		latexmk -cd -pdf -interaction=nonstopmode "$diff_file"
-		latexmk -cd -c "$diff_file" >/dev/null 2>&1 || true
-		cleanup_latex_base "${diff_file%.tex}" "{{latex_aux_exts}}"
-	done
-
-# Generate and compile latexdiff files (convenience)
-make-diffs old_dir: (gen-diffs old_dir) compile-diffs
+# Remove generated PDFs as well as auxiliary files.
+clean-all *files:
+    latexmk -C {{files}}
 
 # ── Optional formatting ──
 
@@ -155,22 +38,9 @@ format-check:
 	done < <(git ls-files -z -- '*.tex' '*.bib' '*.cls' '*.sty')
 	((${#files[@]} == 0)) || badness format --config badness.toml --check "${files[@]}"
 
-# Opt in to the repository's formatter hook. Requires pre-commit.
+# Opt in to formatting and bibliography checks. Requires pre-commit.
 install-hooks:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	command -v pre-commit >/dev/null 2>&1 || { printf 'ERROR: pre-commit is not installed.\n' >&2; exit 127; }
 	pre-commit install
-
-# ── Housekeeping ─────────────────────────────────────────────────────
-
-# Remove auxiliary build files only; keeps ALL .tex and .pdf.
-clean:
-	#!/usr/bin/env bash
-	set -euo pipefail
-	shopt -s nullglob
-	{{_latex_helpers}}
-	for tex_file in *.tex peer_review/*.tex; do
-		cleanup_latex_base "${tex_file%.tex}" "{{latex_aux_exts}}"
-	done
-	printf 'Cleaned auxiliary build files (kept all .tex and .pdf).\n'

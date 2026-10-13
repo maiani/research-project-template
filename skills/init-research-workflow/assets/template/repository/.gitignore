@@ -1,0 +1,28 @@
+# Python and local environments
+__pycache__/
+*.py[codz]
+*.so
+.venv/
+.pixi/
+.env
+.envrc
+
+# Packaging and checks
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage*
+htmlcov/
+
+# Notebooks and generated figures
+.ipynb_checkpoints/
+plots/figures/
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+*~
+.*.swp

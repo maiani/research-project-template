@@ -1,6 +1,6 @@
 # AI agent instructions — research workflow skill development
 
-This repository develops the `init-research-workflow` Codex skill.
+This repository develops the agent-neutral `init-research-workflow` skill.
 It is not itself an initialized research project.
 
 ## Repository layout
@@ -9,17 +9,25 @@ It is not itself an initialized research project.
 .
 ├── skills/init-research-workflow/
 │   ├── SKILL.md                    # callable skill instructions
-│   ├── agents/openai.yaml          # UI metadata
-│   ├── scripts/init_project.sh     # portable initialization runner
+│   ├── agents/openai.yaml          # optional Codex UI metadata
+│   ├── scripts/init_project.py     # portable initializer
+│   ├── tests/                      # initializer and optional rendering checks
 │   └── assets/template/            # canonical project template
 ├── README.md                       # development overview
 ├── CHANGELOG.md                    # workflow release history
-└── CLAUDE.md                       # repository-level development guidance
+└── AGENTS.md                       # shared development guidance
 ```
 
 The template inside `assets/template/` must be self-contained.
 It must not depend on the development repository being present when the skill
 is used in an empty directory.
+
+## Bootstrapping a new project
+
+When asked to start a project, follow
+[`skills/init-research-workflow/SKILL.md`](skills/init-research-workflow/SKILL.md)
+with an empty target directory. That skill is the authoritative setup procedure
+for all agents; do not initialize this development checkout as a research project.
 
 ## Development rules
 
@@ -33,20 +41,18 @@ is used in an empty directory.
 
 ## Validation
 
-Run the official skill validator after changing the skill:
+Keep `SKILL.md` and project guidance independent of any agent client. Client
+metadata may be optional, but must not contain unique workflow instructions.
+Use `AGENTS.md` as the single instructions file; do not create client aliases.
+
+Validate setup without requiring scientific or TeX dependencies:
 
 ```sh
-python3 /home/skdys/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
-  skills/init-research-workflow
+python skills/init-research-workflow/scripts/init_project.py --check
+python -m unittest discover -s skills/init-research-workflow/tests -v
 ```
 
-Run the bundled template preflight and smoke test when changing the template:
-
-```sh
-bash skills/init-research-workflow/assets/template/bootstrap.sh --check
-bash skills/init-research-workflow/assets/template/tests/smoke-bootstrap.sh
-```
-
-For an end-to-end portable-skill test, invoke
-`skills/init-research-workflow/scripts/init_project.sh` with an empty temporary
-directory and representative project values.
+For manuscript changes, also run with `TEST_LATEX=1` to exercise actual
+LaTeX/BibTeX builds and cleanup. For figure guidance/API changes, run
+`tests/smoke-figures.py OUTPUT-DIRECTORY` in an existing environment containing
+the plotting stack and system rendering tools.
