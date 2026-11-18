@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Initialize an empty research project using the bundled project files."""
 import argparse
+import importlib.util
 from datetime import date
 import json
 import os
@@ -12,6 +13,10 @@ import tempfile
 from urllib.parse import urlparse
 
 TEMPLATE = Path(__file__).resolve().parents[1] / 'assets' / 'template'
+WORKFLOW = TEMPLATE.parent / 'workflow'
+spec = importlib.util.spec_from_file_location('workflow', WORKFLOW / 'workflow.py')
+workflow = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(workflow)
 TOKEN = re.compile(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}')
 RESERVED = {'.git', '.agents', '.codex', '.claude', '.aws'}
 
@@ -39,15 +44,16 @@ def overleaf_remote(value):
 
 
 def check_template():
-    required = ['AGENTS.md', 'project.md', 'journal/YYYY-MM-DD.md',
-                'repository/pixi.toml', 'repository/.gitignore',
-                'manuscript/.latexmkrc', 'manuscript/.gitignore',
-                'manuscript/justfile', 'guides/figures.md']
+    required = ['AGENTS.md', 'project.md', 'journal/YYYY-MM-DD.md']
     for name in required:
         if not (TEMPLATE / name).is_file():
             raise ValueError(f'missing template file: {name}')
+    for name in ['workflow.py', 'conventions.md', 'templates/manuscript/justfile',
+                 'templates/repository/pyproject.toml']:
+        if not (WORKFLOW / name).is_file():
+            raise ValueError(f'missing workflow file: {name}')
     for path in TEMPLATE.rglob('*'):
-        if path.name in {'.git', '.pixi', '__pycache__'}:
+        if path.name in {'.git', '.venv', '__pycache__'}:
             raise ValueError(f'development artifact in template: {path}')
     return [p for p in TEMPLATE.rglob('*') if p.is_file() and not p.is_symlink()]
 
@@ -62,7 +68,7 @@ def render_template(files, values):
                 raise ValueError(f'unknown placeholder {key} in {relative}')
             value = values[key]
             # AUTHOR appears inside a TOML string; escape quotes and backslashes.
-            return json.dumps(value, ensure_ascii=False)[1:-1] if relative.name == 'pixi.toml' else value
+            return json.dumps(value, ensure_ascii=False)[1:-1] if relative.name == 'pyproject.toml' else value
         rendered[relative] = TOKEN.sub(replace, path.read_text(encoding='utf-8'))
     return rendered
 
@@ -108,12 +114,16 @@ def initialize(args):
         for name, text in rendered.items():
             (stage / name).write_text(text, encoding='utf-8')
         (stage / 'journal/YYYY-MM-DD.md').rename(stage / f'journal/{day}.md')
-        for name in ['bibliography', 'workspace/scratch', 'repository/analytics',
-                     'repository/plots/figures', 'manuscript/outreach', 'manuscript/svg']:
-            (stage / name).mkdir(parents=True, exist_ok=True)
-        for name in ['workspace/scratch', 'repository/analytics']:
-            (stage / name / '.gitkeep').touch()
+        (stage / 'bibliography').mkdir(exist_ok=True)
         (stage / f'bibliography/{slug}.bib').write_text('% Project bibliography.\n', encoding='utf-8')
+        workflow.install(stage)
+        config = workflow.read_json(stage / 'workflow.json')
+        config.update(slug=slug, title=args.title, author=args.author)
+        workflow.write_json(stage / 'workflow.json', config)
+        if getattr(args, 'repository', False):
+            workflow.add(stage, 'repository')
+        if remote or getattr(args, 'manuscript', False):
+            workflow.add(stage, 'manuscript')
         if remote:
             checkout = Path(temporary) / 'overleaf'
             subprocess.run(['git', 'clone', '--origin', 'overleaf', remote, str(checkout)], check=True)
@@ -122,12 +132,6 @@ def initialize(args):
                          '.pre-commit-config.yaml', 'badness.toml']:
                 if not (checkout / name).exists():
                     shutil.copy2(stage / 'manuscript' / name, checkout / name)
-            for name in ['outreach', 'svg']:
-                (checkout / name).mkdir(exist_ok=True)
-            outreach = checkout / 'outreach'
-            if not (outreach / 'README.md').exists():
-                shutil.copy2(stage / 'manuscript/outreach/README.md', outreach / 'README.md')
-            (outreach / 'visuals').mkdir(exist_ok=True)
             shutil.rmtree(stage / 'manuscript')
             shutil.move(str(checkout), stage / 'manuscript')
         if destination != target:
@@ -138,8 +142,10 @@ def initialize(args):
         if name == 'manuscript' and remote:
             continue  # Never commit into the authoritative Overleaf checkout.
         repo = target / name
+        if not repo.exists():
+            continue
         git(repo, 'init', '-b', 'main')
-        if not args.no_commit:
+        if getattr(args, 'commit', False) and not args.no_commit:
             git(repo, 'add', '-A')
             git(repo, 'commit', '-m', f'Initialize {slug}' + (f' {name}' if name else ''))
     print(f'Initialized {target}. Edit project.md; develop privately in workspace/.')
@@ -156,7 +162,10 @@ def main():
     parser.add_argument('--desc')
     parser.add_argument('--status', default='Initial setup.')
     parser.add_argument('--overleaf-url')
-    parser.add_argument('--no-commit', action='store_true')
+    parser.add_argument('--no-commit', action='store_true', help='compatibility flag; setup is unstaged by default')
+    parser.add_argument('--commit', action='store_true', help='explicitly create initial local commits')
+    parser.add_argument('--manuscript', action='store_true', help='create a manuscript repository now')
+    parser.add_argument('--repository', action='store_true', help='create a shared artifact repository now')
     parser.add_argument('--date', default=os.environ.get('BOOTSTRAP_DATE', date.today().isoformat()))
     args = parser.parse_args()
     try:

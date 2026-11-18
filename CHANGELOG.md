@@ -3,6 +3,29 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## Unreleased — 3.0.0
+
+- Added a top-level `workflow.py` for one-time skill installation, initialization,
+  and adoption. Put agent-led installation and invocation first in the README.
+
+- Replaced the Pixi scaffold with a minimal uv-compatible `pyproject.toml`.
+  Use existing Python environments for development; add dependencies as needed
+  and lock/verify them at codebase release preparation. No automatic venvs or
+  preloaded scientific dependencies.
+
+- Added an updateable, agent-neutral shared runtime with research, manuscript,
+  and release skills, plus non-destructive adoption for existing projects.
+- Added release selection, persistent version pins, local-change protection,
+  cached update checks, opt-in automatic updates, and editable pilot installs.
+- Updates preserve local instructions, project metadata, scientific content,
+  environment locks, and existing manuscript/build configuration.
+- New projects start with private work, context, bibliography, and journal only.
+  Manuscript and shared repositories are optional; outreach and referee response
+  templates are created only when needed. Slides have no automatic scaffold.
+- Initialization no longer stages or commits by default; `--commit` is explicit.
+- Existing 2.x projects can adopt without moving files. Their copied instructions
+  remain local overrides and require selective review, not automatic replacement.
+
 ## 2.0.0 — 2026-10-13
 
 ### Migration from 1.x

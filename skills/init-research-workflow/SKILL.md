@@ -1,101 +1,75 @@
 ---
 name: init-research-workflow
-description: Initialize a new academic research project in the current empty working directory using the bundled research workflow template, including private exploration, reproducible code, manuscript, bibliography, journal, and Git boundaries. Use when the user asks to run /init-research-workflow, start a new research project, initialize an academic paper workflow, or bootstrap a paper project in an empty folder.
+description: Initialize a minimal research project or adopt the shared research workflow in an existing project, preserving scientific content and local conventions.
 ---
 
-# Init Research Workflow
+# Set Up a Research Workflow
 
-Initialize the current empty directory as a new academic research project.
-These instructions apply to any agent with filesystem and shell access. Resolve
-`<skill-root>` as the directory containing this file, regardless of how the
-client discovers or invokes the skill.
+Resolve paths relative to this skill folder. The bundled scaffold and workflow
+are portable; do not depend on a separate development checkout.
 
-The skill is portable: use the bundled template snapshot rather than assuming
-that the template repository is the current directory.
+## Existing projects
 
-## Preconditions
+When asked to adopt the workflow, inspect the project's instructions and repository
+boundaries first. Run from its root:
 
-- Confirm that the current working directory is the intended project directory.
-- Require it to be empty before copying the template. Empty reserved
-  `.git`, `.agents`, `.codex`, `.claude`, and `.aws` directories created by managed
-  workspaces are allowed and preserved; populated directories are rejected.
-  If it is not empty, stop and ask the user to choose an empty directory or
-  explicitly clarify that an existing project should be migrated.
-- Read the skill’s bundled workflow only as needed; do not search for a second
-  template repository elsewhere on the machine.
-- Do not create a dated journal file manually.
+```sh
+python <skill-root>/assets/workflow/workflow.py adopt
+```
 
-## Collect project details
+This installs the shared method and adds instruction routing, without creating
+project folders or replacing existing instructions. Local rules remain overrides;
+review conflicting old defaults selectively. Adoption does not authorize changes
+to models, environments, manuscript settings, remotes, or publication status.
+Use `adopt --editable /path/to/development-checkout` only when a pilot project is
+explicitly intended to follow development changes immediately.
 
-Ask for these details one at a time, in this order:
+## New projects
 
-1. Derive the project slug from the current directory name. If it is lowercase
-   kebab-case, ask the user to confirm that it is the intended project name;
-   do not ask for the slug independently.
-   If it is not a valid slug, or the user wants a different name, ask for a
-   lowercase kebab-case replacement and confirm that the empty directory may be
-   renamed before initialization.
-2. Temporary project title.
-3. Author name or names.
-4. Short description, allowing the project title as the fallback.
-5. Existing Overleaf project URL or project ID, if one exists.
+Confirm the intended directory. Require it to be empty, except for empty reserved
+`.git`, `.agents`, `.codex`, `.claude`, and `.aws` directories. For a populated
+project, use adoption instead of copying a scaffold over it.
 
-Do not ask all questions in one message.
-The final directory name and slug must be lowercase kebab-case: lowercase
-letters and digits separated by single hyphens (for example, `project-slug`).
-Treat an omitted Overleaf value as a request for a local manuscript repository.
-
-## Initialize the directory
-
-After collecting all details, invoke the bundled script from the current
-working directory:
+Derive a lowercase kebab-case slug from the directory name. Collect the missing
+title, authors, and short objective, reusing information already supplied. Ask one
+question at a time when needed. The title can serve as the description. Confirm
+any directory rename. Ask about an existing Overleaf project when manuscript work
+is part of the current task; do not require future publication choices to begin.
 
 ```sh
 python <skill-root>/scripts/init_project.py "$PWD" \
-  [--rename-to "<confirmed-slug>"] \
-  --slug "<slug>" \
-  --title "<title>" \
-  --author "<author>" \
-  --desc "<description>" \
-  [--overleaf-url "<url-or-project-id>"] [--no-commit]
+  --title "<title>" --author "<authors>" --desc "<objective>" \
+  [--rename-to "<confirmed-slug>"] [--overleaf-url "<url-or-id>"]
 ```
 
-Use `--no-commit` when the user wants an uncommitted project; otherwise the
-initializer creates initial local commits. Never commit into an Overleaf checkout.
-Use the exact collected values and quote every argument. Pass `--rename-to`
-only after the user has confirmed a different valid directory name. The runner
-renames only an empty target directory and rejects a slug that does not match
-the final directory name.
-The initializer validates inputs, prepares the project from `assets/template/`,
-and initializes the Git repositories. Only Python 3.11+ and Git are needed for setup.
-Do not manually recreate the directory layout.
+Quote each value. Setup needs only Python 3.11+ and Git. Nothing is staged or
+committed by default. Use `--commit` only with explicit authorization for initial
+local commits; never commit into an Overleaf checkout.
 
-The resulting project contains private `workspace/` exploration,
-collaborator-ready `repository/` artifacts, an authoritative `manuscript/`, a
-superset `bibliography/<slug>.bib`, and a dated chained journal entry.
-When an Overleaf URL or project ID is supplied, preserve the Overleaf checkout
-as the authoritative manuscript repository, with its remote named `overleaf`.
-An optional GitHub manuscript mirror must use the remote name `github` and is
-added only after the user authorizes its account or organization.
+Default setup creates the project context, private workspace, bibliography,
+journal, and shared package. Add `--manuscript` or `--repository` only if that work
+is needed now. An Overleaf URL implies manuscript setup and preserves the remote
+as authoritative, named `overleaf`. Do not create remotes or publish without an
+explicit request.
 
-## Verify and report
+## Verify and continue
 
-After initialization:
+Read the generated AGENTS.md explicitly. Check project metadata, the dated journal,
+bibliography, and installed shared package. Confirm that any requested manuscript
+or artifact repository has an independent Git root and is excluded from root Git.
+No optional outreach, response, slides, or scratch directories should be created
+without a current need. Setup tests and development scripts stay in the package
+source, outside the visible project scaffold.
 
-- Read the generated `AGENTS.md` explicitly; do not depend on client-specific
-  automatic loading.
-- Confirm `project.md` contains the title, description, and authors; confirm
-  the three repository naming conventions are documented in `AGENTS.md`.
-- Confirm `repository/.git` and `manuscript/.git` exist.
-- Confirm the root Git repository does not track files from either nested
-  repository.
-- Confirm `bibliography/<slug>.bib` and the dated `journal/<date>.md` exist.
-- Confirm setup scripts, tests, and the development-only `skills/` directory
-  were not copied into the generated project.
-- Report what was created and the next steps: edit the project context, add an
-  Overleaf remote if needed, keep exploration in `workspace/`, and promote only
-  finalized material to `repository/`.
+Continue the user's actual research task using the relevant installed skill.
+Update project.md and the journal with the objective, evidence, and next action.
+Explain optional setup only as it becomes relevant:
 
-Do not commit, push, or publish additional changes beyond the commits made by
-the initializer unless the user explicitly asks for that separate
-action.
+```sh
+python .workflow/workflow.py add manuscript
+python .workflow/workflow.py add repository
+```
+
+The ongoing skills cover research, manuscript/revision, and sharing/release. Local
+project instructions override them. Updates refresh the method only; existing
+scientific files and build configuration remain project-owned.

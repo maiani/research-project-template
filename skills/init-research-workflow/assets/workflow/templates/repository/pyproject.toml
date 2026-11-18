@@ -1,0 +1,10 @@
+[project]
+name = "{{ PROJECT_SLUG }}"
+version = "0.1.0"
+authors = [{ name = "{{ AUTHOR }}" }]
+requires-python = ">=3.12"
+# Add only dependencies used by this codebase. Lock them at release preparation.
+dependencies = []
+
+[tool.uv]
+package = false

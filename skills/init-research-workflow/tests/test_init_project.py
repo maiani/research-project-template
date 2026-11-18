@@ -30,9 +30,8 @@ class InitializationTests(unittest.TestCase):
 
     def run_init(self, *extra, success=True, commit=False, env=None):
         command = [sys.executable, str(SCRIPT), str(self.target),
-                   '--title', 'A test project', '--author', 'Test Author', '--date', '2030-01-02']
-        if not commit:
-            command += ['--no-commit']
+                   '--manuscript', '--repository', '--title', 'A test project', '--author', 'Test Author', '--date', '2030-01-02']
+        command += ['--commit'] if commit else ['--no-commit']
         result = subprocess.run(command + list(extra), env=env or self.env,
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
@@ -57,18 +56,18 @@ class InitializationTests(unittest.TestCase):
             self.git(repo, 'rev-parse', '--verify', 'HEAD')
             self.assertFalse(self.git(repo, 'remote'))
         self.assertFalse(self.git(self.target, 'ls-files', 'repository', 'manuscript'))
-        self.assertTrue((self.target / 'manuscript/outreach/README.md').exists())
-        self.assertTrue((self.target / 'manuscript/outreach/visuals').is_dir())
+        self.assertFalse((self.target / 'manuscript/outreach').exists())
         self.assertTrue((self.target / 'bibliography/test-project.bib').exists())
         self.assertTrue((self.target / 'journal/2030-01-02.md').exists())
         for name in ['tests', 'scripts', 'bootstrap', 'bootstrap.sh', 'skills', 'CLAUDE.md']:
             self.assertFalse((self.target / name).exists())
         self.assertFalse((self.target / 'journal/YYYY-MM-DD.md').exists())
-        manifest = tomllib.loads((self.target / 'repository/pixi.toml').read_text())
-        self.assertIn('figworks', manifest['pypi-dependencies'])
-        self.assertNotIn('jupyterlab', manifest['dependencies'])
-        self.assertIn('notebooks', manifest['environments'])
-        self.assertEqual(self.git(self.target / 'repository', 'check-ignore', '.pixi/test'), '.pixi/test')
+        manifest = tomllib.loads((self.target / 'repository/pyproject.toml').read_text())
+        self.assertEqual(manifest['project']['dependencies'], [])
+        self.assertFalse(manifest['tool']['uv']['package'])
+        self.assertFalse((self.target / 'repository/uv.lock').exists())
+        self.assertFalse((self.target / 'repository/.venv').exists())
+        self.assertEqual(self.git(self.target / 'repository', 'check-ignore', '.venv/test'), '.venv/test')
         self.assertEqual(len(self.git(self.target / 'manuscript', 'check-ignore', 'aux/a.aux', 'out/a.pdf').splitlines()), 2)
 
     def test_rejections_leave_target_untouched(self):
@@ -102,8 +101,8 @@ class InitializationTests(unittest.TestCase):
     def test_author_escaping(self):
         author = 'A "quoted" author \\ collaborator'
         self.run_init('--author', author)
-        manifest = tomllib.loads((self.target / 'repository/pixi.toml').read_text())
-        self.assertEqual(manifest['workspace']['authors'], [author])
+        manifest = tomllib.loads((self.target / 'repository/pyproject.toml').read_text())
+        self.assertEqual(manifest['project']['authors'], [{'name': author}])
         self.assertIn(author, (self.target / 'project.md').read_text())
 
     def test_overleaf_preserves_remote_content(self):
@@ -128,7 +127,7 @@ class InitializationTests(unittest.TestCase):
         self.assertEqual(self.git(manuscript, 'rev-parse', 'HEAD'), self.git(remote, 'rev-parse', 'HEAD'))
         self.assertTrue((manuscript / 'justfile').exists())
         self.assertEqual((manuscript / 'outreach/README.md').read_text(), 'Existing outreach guide')
-        self.assertTrue((manuscript / 'outreach/visuals').is_dir())
+        self.assertFalse((manuscript / 'outreach/visuals').exists())
         self.assertFalse((manuscript / 'submission/response.tex').exists())
 
     def test_portable_skill_copy(self):
@@ -137,7 +136,7 @@ class InitializationTests(unittest.TestCase):
         subprocess.run([sys.executable, str(standalone / 'scripts/init_project.py'),
                         str(self.target), '--title', 'Portable', '--author', 'Test',
                         '--no-commit'], check=True, env=self.env, stdout=subprocess.PIPE)
-        self.assertTrue((self.target / 'guides/figures.md').exists())
+        self.assertTrue((self.target / '.workflow/templates/guides/figures.md').exists())
         self.assertFalse((self.target / 'scripts').exists())
 
     def test_clone_failure_preserves_empty_target(self):

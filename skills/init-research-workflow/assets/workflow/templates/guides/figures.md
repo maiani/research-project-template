@@ -1,7 +1,7 @@
 # Figure guide
 
-Read when creating or revising a figure. Paths below are relative to the project root.
-
+Read when creating or revising a figure. Paths below are relative to the
+project root.
 
 - Avoid using title elements.
 - Name figure output files with the manuscript figure number plus a descriptive
@@ -21,7 +21,7 @@ Read when creating or revising a figure. Paths below are relative to the project
   settings with `matplotlib.rc_context(theme_rc(style_path))` to every plot
   and pass the same style to `figworks.Figure(theme=style_path)`.
 
-### Sketches and schematics
+## Sketches and schematics
 
 - Build 2D sketches and schematics programmatically with
   [`svg.py`](https://github.com/orsinium-labs/svg) (`import svg`); use
@@ -50,9 +50,9 @@ Read when creating or revising a figure. Paths below are relative to the project
   the label with the geometry. `scene.with_camera(...)` reuses the same
   scene under another projection.
 - VecView is an optional dependency, not installed by FigWorks itself. When
-  shared figure code uses it, declare it in `repository/pixi.toml` and update
-  the lockfile with Pixi. Follow the normal-shell dependency rule for private
-  exploration.
+  shared figure code uses it, declare it in `repository/pyproject.toml`; resolve
+  and validate the uv lockfile when preparing a codebase release. Follow the
+  normal-shell dependency rule for private exploration.
 - For insertion into an existing Matplotlib figure, use
   `figworks.compose({ax: str(canvas)}, fig=mpl_fig)`.
 - Drive the sketch from the same quantities as the computed panels — a barrier
@@ -64,8 +64,8 @@ Read when creating or revising a figure. Paths below are relative to the project
   arrow, or scaled with a group — typeset it with
   [`vectex`](https://github.com/maiani/vectex), which compiles a LaTeX snippet
   (`pdflatex` → `dvisvgm`) into one portable SVG `<g>` fragment carrying the
-  manuscript's own math typography. The fragment carries metadata for later editing with Inkscape's
-  TexText extension:
+  manuscript's own math typography. The fragment carries metadata for later
+  editing with Inkscape's TexText extension:
 
   ```python
   import svg
@@ -96,7 +96,6 @@ Read when creating or revising a figure. Paths below are relative to the project
 - After generating or regenerating any panel, visually verify that text and
   graphical elements do not overlap, font sizes suit the target column width,
   and stacked or adjacent panels meet their alignment constraints.
-
 
 ## Provenance and interpretation
 

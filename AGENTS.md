@@ -1,7 +1,8 @@
 # AI agent instructions — research workflow skill development
 
 This repository develops the agent-neutral `init-research-workflow` skill.
-It is not itself an initialized research project.
+It is not itself an initialized research project. The skill also distributes the
+shared runtime under `assets/workflow/`.
 
 ## Repository layout
 
@@ -12,7 +13,9 @@ It is not itself an initialized research project.
 │   ├── agents/openai.yaml          # optional Codex UI metadata
 │   ├── scripts/init_project.py     # portable initializer
 │   ├── tests/                      # initializer and optional rendering checks
-│   └── assets/template/            # canonical project template
+│   ├── assets/template/            # minimal project scaffold
+│   └── assets/workflow/            # updateable method and optional templates
+├── workflow.py                    # user-facing install/init/adopt entry point
 ├── README.md                       # development overview
 ├── CHANGELOG.md                    # workflow release history
 └── AGENTS.md                       # shared development guidance
@@ -31,9 +34,12 @@ for all agents; do not initialize this development checkout as a research projec
 
 ## Development rules
 
-- Edit the bundled template under `skills/init-research-workflow/assets/template/`.
+- Edit the minimal scaffold under `skills/init-research-workflow/assets/template/`
+  and the shared method under `skills/init-research-workflow/assets/workflow/`.
+- Create optional project structure only when a current task requires it.
+- Updates may replace owned method files, never project science or configuration.
 - Keep skill instructions and helper scripts outside the bundled template.
-- Use `git mv` for structural moves so Git preserves file history.
+- Keep structural moves reviewable; do not stage or commit without authorization.
 - Do not copy development-only files into generated research projects.
 - Preserve the template’s private `workspace/`, shared `repository/`,
   authoritative `manuscript/`, bibliography, and journal boundaries.
