@@ -3,28 +3,47 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
-## Unreleased — 3.0.0
+## 3.0.0 — 2026-11-18
 
-- Added a top-level `workflow.py` for one-time skill installation, initialization,
-  and adoption. Put agent-led installation and invocation first in the README.
+### Migration from 2.x
 
+The setup skill is now `research-setup` (was `init-research-workflow`). Pull the
+kit checkout, remove the old skill link or copy from your agent's skill directory,
+and run `python workflow.py install` again. Existing 2.x projects adopt the
+workflow without moving files (`workflow.py adopt`); their copied instructions
+remain local overrides and need selective review, not automatic replacement.
+
+### Changes
+
+- Added a top-level `workflow.py` for one-time skill installation,
+  initialization, and adoption, with agent-led installation first in the README.
+- The kit lives at the repository root: `skills/`, `tools/`, `scaffold/`,
+  `templates/`, `conventions.md`, and `tests/`. Only `research-setup` is installed
+  globally.
+- Each project receives a versioned `.workflow/` snapshot of the kit, with two
+  ongoing skills: `research-work` (research, code, figures, codebase releases)
+  and `research-manuscript` (manuscript, referee responses, outreach). The
+  project's AGENTS.md gets a short block routing to `.workflow/conventions.md`,
+  which names the skills. Local AGENTS.md rules override the shared defaults.
+- Added release selection, persistent version pins, local-change protection,
+  cached update checks, and editable pilot installs that link only the kit files.
+  Updates run the selected version's installer and change only `.workflow/`,
+  never local instructions, scientific content, environments, locks, or
+  manuscript configuration. Checks report updates only for older releases,
+  never suggest a downgrade, and never update automatically.
+- New projects start with private work, context, bibliography, and journal only.
+  Manuscript and shared repositories, outreach, and referee-response templates
+  are added on demand with `add`; slides have no scaffold. Response and outreach
+  templates can join existing folders without overwriting files.
+- Initialization no longer stages or commits by default; `--commit` is explicit.
+  Removed the `--no-commit` and `--slug` flags and the `init_project.sh` wrapper.
+  `adopt` accepts `--title` and `--author` for components added later.
 - Replaced the Pixi scaffold with a minimal uv-compatible `pyproject.toml`.
   Use existing Python environments for development; add dependencies as needed
-  and lock/verify them at codebase release preparation. No automatic venvs or
-  preloaded scientific dependencies.
-
-- Added an updateable, agent-neutral shared runtime with research, manuscript,
-  and release skills, plus non-destructive adoption for existing projects.
-- Added release selection, persistent version pins, local-change protection,
-  cached update checks, opt-in automatic updates, and editable pilot installs.
-- Updates preserve local instructions, project metadata, scientific content,
-  environment locks, and existing manuscript/build configuration.
-- New projects start with private work, context, bibliography, and journal only.
-  Manuscript and shared repositories are optional; outreach and referee response
-  templates are created only when needed. Slides have no automatic scaffold.
-- Initialization no longer stages or commits by default; `--commit` is explicit.
-- Existing 2.x projects can adopt without moving files. Their copied instructions
-  remain local overrides and require selective review, not automatic replacement.
+  and lock and verify them when preparing a codebase release.
+- Delegated figure API guidance to FigWorks' packaged skill, checked against
+  FigWorks 0.11.0, VecTeX 0.5.0, and VecView 0.5.0. Updated optional manuscript
+  hooks to Badness 0.29.1 and Pynakes 0.9.0.
 
 ## 2.0.0 — 2026-10-13
 

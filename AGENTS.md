@@ -1,41 +1,28 @@
 # AI agent instructions — research workflow skill development
 
-This repository develops the agent-neutral `init-research-workflow` skill.
-It is not itself an initialized research project. The skill also distributes the
-shared runtime under `assets/workflow/`.
+This repository develops the agent-neutral research workflow kit, not a research
+project. Three sibling skills live under `skills/`; `tools/` holds shared Python
+commands, `scaffold/` the minimal project files, and `templates/` the optional
+components added with `add`. `conventions.md` holds shared rules and names the
+task skills.
 
-## Repository layout
-
-```text
-.
-├── skills/init-research-workflow/
-│   ├── SKILL.md                    # callable skill instructions
-│   ├── agents/openai.yaml          # optional Codex UI metadata
-│   ├── scripts/init_project.py     # portable initializer
-│   ├── tests/                      # initializer and optional rendering checks
-│   ├── assets/template/            # minimal project scaffold
-│   └── assets/workflow/            # updateable method and optional templates
-├── workflow.py                    # user-facing install/init/adopt entry point
-├── README.md                       # development overview
-├── CHANGELOG.md                    # workflow release history
-└── AGENTS.md                       # shared development guidance
-```
-
-The template inside `assets/template/` must be self-contained.
-It must not depend on the development repository being present when the skill
-is used in an empty directory.
+`workflow.py install` registers only `research-setup` centrally. Projects reach
+`research-work` and `research-manuscript` through their pinned `.workflow/`
+snapshot: the AGENTS.md block points only to `conventions.md`, so skills can be
+renamed in a release without editing project files. Keep project snapshots
+independent of the development checkout unless editable mode was explicitly chosen.
 
 ## Bootstrapping a new project
 
 When asked to start a project, follow
-[`skills/init-research-workflow/SKILL.md`](skills/init-research-workflow/SKILL.md)
+[`skills/research-setup/SKILL.md`](skills/research-setup/SKILL.md)
 with an empty target directory. That skill is the authoritative setup procedure
 for all agents; do not initialize this development checkout as a research project.
 
 ## Development rules
 
-- Edit the minimal scaffold under `skills/init-research-workflow/assets/template/`
-  and the shared method under `skills/init-research-workflow/assets/workflow/`.
+- Edit shared skills under `skills/`, tools under `tools/`, and project assets
+  under `scaffold/` and `templates/`.
 - Create optional project structure only when a current task requires it.
 - Updates may replace owned method files, never project science or configuration.
 - Keep skill instructions and helper scripts outside the bundled template.
@@ -54,8 +41,8 @@ Use `AGENTS.md` as the single instructions file; do not create client aliases.
 Validate setup without requiring scientific or TeX dependencies:
 
 ```sh
-python skills/init-research-workflow/scripts/init_project.py --check
-python -m unittest discover -s skills/init-research-workflow/tests -v
+python workflow.py init --check
+python -m unittest discover -s tests -v
 ```
 
 For manuscript changes, also run with `TEST_LATEX=1` to exercise actual

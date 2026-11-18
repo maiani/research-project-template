@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 SKILL = Path(__file__).resolve().parents[1]
-SCRIPT = SKILL / 'scripts/init_project.py'
+SCRIPT = SKILL / 'tools/init_project.py'
 spec = importlib.util.spec_from_file_location('initializer', SCRIPT)
 initializer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(initializer)
@@ -31,7 +31,8 @@ class InitializationTests(unittest.TestCase):
     def run_init(self, *extra, success=True, commit=False, env=None):
         command = [sys.executable, str(SCRIPT), str(self.target),
                    '--manuscript', '--repository', '--title', 'A test project', '--author', 'Test Author', '--date', '2030-01-02']
-        command += ['--commit'] if commit else ['--no-commit']
+        if commit:
+            command.append('--commit')
         result = subprocess.run(command + list(extra), env=env or self.env,
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
@@ -71,7 +72,7 @@ class InitializationTests(unittest.TestCase):
         self.assertEqual(len(self.git(self.target / 'manuscript', 'check-ignore', 'aux/a.aux', 'out/a.pdf').splitlines()), 2)
 
     def test_rejections_leave_target_untouched(self):
-        for flags in [('--slug', '../escape'), ('--slug', 'other'), ('--date', '../bad'),
+        for flags in [('--rename-to', '../escape'), ('--rename-to', 'Not_Kebab'), ('--date', '../bad'),
                       ('--overleaf-url', 'https://evil.example/overleaf.com/project/12345678'),
                       ('--unknown',)]:
             self.run_init(*flags, success=False)
@@ -94,7 +95,7 @@ class InitializationTests(unittest.TestCase):
         self.assertTrue((renamed / '.git/HEAD').exists())
         self.assertTrue((renamed / '.agents').is_dir())
         self.assertTrue((renamed / '.claude').is_dir())
-        self.assertFalse(self.git(renamed, 'ls-files'))  # --no-commit does not stage
+        self.assertFalse(self.git(renamed, 'ls-files'))  # nothing is staged by default
         self.assertEqual(self.git(self.root, 'remote', 'get-url', 'origin'), 'https://example.invalid/parent')
         self.assertFalse(self.git(self.root, 'ls-files'))
 
@@ -116,8 +117,8 @@ class InitializationTests(unittest.TestCase):
         self.git(remote, 'add', '.')
         self.git(remote, 'commit', '-m', 'Original')
         args = type('Args', (), dict(target=str(self.target), check=False, title='Test',
-                    author='Test Author', rename_to=None, slug=None, date='2030-01-02',
-                    overleaf_url='12345678', desc=None, status='Initial setup.', no_commit=True))()
+                    author='Test Author', rename_to=None, date='2030-01-02', overleaf_url='12345678',
+                    desc=None, status='Initial setup.', commit=False, manuscript=False, repository=False))()
         with patch.object(initializer, 'overleaf_remote', return_value=str(remote)):
             initializer.initialize(args)
         manuscript = self.target / 'manuscript'
@@ -130,19 +131,19 @@ class InitializationTests(unittest.TestCase):
         self.assertFalse((manuscript / 'outreach/visuals').exists())
         self.assertFalse((manuscript / 'submission/response.tex').exists())
 
-    def test_portable_skill_copy(self):
-        standalone = self.root / 'standalone-skill'
-        shutil.copytree(SKILL, standalone, ignore=shutil.ignore_patterns('__pycache__'))
-        subprocess.run([sys.executable, str(standalone / 'scripts/init_project.py'),
-                        str(self.target), '--title', 'Portable', '--author', 'Test',
-                        '--no-commit'], check=True, env=self.env, stdout=subprocess.PIPE)
-        self.assertTrue((self.target / '.workflow/templates/guides/figures.md').exists())
+    def test_complete_kit_copy(self):
+        standalone = self.root / 'standalone-kit'
+        shutil.copytree(SKILL, standalone, ignore=shutil.ignore_patterns('.git', '__pycache__'))
+        subprocess.run([sys.executable, str(standalone / 'tools/init_project.py'),
+                        str(self.target), '--title', 'Portable', '--author', 'Test'],
+                       check=True, env=self.env, stdout=subprocess.PIPE)
+        self.assertTrue((self.target / '.workflow/skills/research-work/figures.md').exists())
         self.assertFalse((self.target / 'scripts').exists())
 
     def test_clone_failure_preserves_empty_target(self):
         args = type('Args', (), dict(target=str(self.target), check=False, title='Test',
-                    author='Test', rename_to='renamed', slug=None, date='2030-01-02',
-                    overleaf_url='12345678', desc=None, status='Initial setup.', no_commit=True))()
+                    author='Test', rename_to='renamed', date='2030-01-02', overleaf_url='12345678',
+                    desc=None, status='Initial setup.', commit=False, manuscript=False, repository=False))()
         with patch.object(initializer, 'overleaf_remote', return_value=str(self.root / 'missing')):
             with self.assertRaises(subprocess.CalledProcessError):
                 initializer.initialize(args)

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Initialize Research Workflow"
-  short_description: "Bootstrap a structured academic research project"
-  default_prompt: "Use $init-research-workflow to bootstrap this academic research project."

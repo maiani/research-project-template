@@ -1,12 +1,13 @@
 # Research Workflow Kit
 
 An agent-neutral, updateable research method with a small project initializer.
-The package supplies shared skills and tools; each project owns its scientific
+The kit supplies shared skills and tools; each project owns its scientific
 choices, evidence, manuscript, environments, and local instructions.
 
 Install the kit once on your computer, then adopt it only in the projects where
-it is useful. The central checkout supplies the setup skill; adopted projects
-keep independent method versions and their own research content.
+it is useful. The central checkout supplies the `research-setup` skill; each
+project keeps its own pinned copy of the method, so it stays independent of the
+central checkout once initialized or adopted.
 
 ## Install once with your agent
 
@@ -14,12 +15,12 @@ Give your agent this request:
 
 > Install the research workflow from
 > <https://github.com/maiani/research-project-template> on this computer. Read its
-> README, reuse an existing checkout if present, and register the setup skill for
+> README, reuse an existing checkout if present, and register its setup skill for
 > my agent. Do not initialize or modify any research project yet.
 
 The agent needs local file and command access, Python 3.11+, Git, and access to
-that repository. No uv installation, virtual environment, or scientific packages
-are needed just to install or adopt the workflow.
+that repository. No uv, virtual environment, or scientific packages are needed to
+install, initialize, or adopt the workflow.
 
 For agents carrying out installation, clone once into a persistent location,
 then run the top-level entry point:
@@ -32,102 +33,89 @@ python "$HOME/.local/share/research-workflow/workflow.py" install
 
 The default skill directory is `~/.agents/skills/`. Use
 `python workflow.py install --skills-dir PATH` for a different agent's configured
-skill directory. The installer links the setup skill to this checkout: keep the
-checkout in place. It preserves existing installations and is safe to rerun.
-If links are unavailable, copy the complete `skills/init-research-workflow/`
-folder to the agent's skill directory, or ask it to read SKILL.md explicitly.
-
-These commands describe the working-tree version; they become available from a
-fresh clone after the maintainer publishes this change.
+skill directory; for Claude Code, that is `--skills-dir ~/.claude/skills`.
+The installer links the setup skill to this checkout: keep the checkout in place.
+It preserves existing installations and is safe to rerun. If links are
+unavailable, keep the complete kit checkout and ask the agent to read
+`skills/research-setup/SKILL.md` explicitly.
 
 ## Ask your agent to use it
 
 Open the intended project folder in your agent and say:
 
-> Use init-research-workflow to start a research project here. My objective is …
+> Use research-setup to start a research project here. My objective is …
 
 For an existing project:
 
-> Use init-research-workflow to adopt the workflow here. Preserve my files and
-> local conventions. Do not stage or commit anything.
+> Use research-setup to adopt the workflow here. Preserve my files and local
+> conventions. Do not stage or commit anything.
 
-The agent gathers only missing context and runs setup or adoption. You do not
-need to remember internal paths. In later sessions, ask for the research work
-normally; the project's AGENTS.md routes the agent to the relevant skills.
-If the skill is not discovered, point the agent directly to
-`skills/init-research-workflow/SKILL.md` in the installation checkout.
+The agent gathers only missing context and runs setup or adoption. In later
+sessions, ask for the research work normally: the project's AGENTS.md sends the
+agent to `.workflow/conventions.md`, which names the skill for each task.
 
-## Start small
+## Start a project from the command line
 
-For direct command-line use, create an empty project folder and run:
+Create an empty project folder and run:
 
 ```sh
 python /path/to/research-project-template/workflow.py init /path/to/project \
   --title "Project title" --author "Author"
 ```
 
-Setup requires Python 3.11+ and Git. It creates `project.md`, `AGENTS.md`, a private
-`workspace/`, a bibliography, a dated journal, and the hidden `.workflow/` package.
-The root Git repository is initialized, but nothing is staged or committed by
-default. `--commit` explicitly opts into initial commits.
+This creates `project.md`, `AGENTS.md`, a private `workspace/`, a bibliography, a
+dated journal, and the hidden `.workflow/` snapshot. The root Git repository is
+initialized, but nothing is staged or committed unless you pass `--commit`.
+`--manuscript` and `--repository` create those components immediately;
+`--overleaf-url URL` clones an existing Overleaf manuscript instead, preserving
+its content and never committing into it.
 
-No manuscript, public-code repository, outreach, referee response, slides,
-plot directories, or scratch folders are created in anticipation of future work.
-Create scratch work where needed. When a real task needs an optional component:
+Nothing else is created in advance. When a task needs an optional component, run
+from the project root:
 
 ```sh
-python .workflow/workflow.py add manuscript
-python .workflow/workflow.py add repository
-python .workflow/workflow.py add response
-python .workflow/workflow.py add outreach
+python .workflow/workflow.py add manuscript   # independent Git repository
+python .workflow/workflow.py add repository   # independent Git repository
+python .workflow/workflow.py add response     # referee response template
+python .workflow/workflow.py add outreach     # outreach README and folders
 ```
 
-Manuscript and repository setup creates independent Git repositories without
-staging or committing. Response and outreach setup requires the manuscript
-repository first. Existing destinations are never overwritten. Slides have no
-preset scaffold: create the format needed for the actual talk.
-
-Initialization accepts `--manuscript` and `--repository` when those are needed
-immediately. `--overleaf-url URL` clones the authoritative manuscript instead;
-it preserves existing content and never commits into that checkout.
+Response and outreach need the manuscript repository first. They may be added to
+existing folders; existing files are never overwritten.
 
 ## Adopt an existing project
 
-From the existing project root, run the package's manager:
+From the existing project root:
 
 ```sh
-python /path/to/research-project-template/workflow.py adopt
+python /path/to/research-project-template/workflow.py adopt \
+  --title "Project title" --author "Author"
 ```
 
-Adoption installs `.workflow/`, writes `workflow.json`, adds a small routing block
-to `AGENTS.md`, and links skills under `.agents/skills/` where supported. Existing
-instructions and foreign skills are preserved. It creates no project scaffold,
-moves no research files, and does not initialize or change existing repositories.
-Read the linked skills explicitly when the client cannot discover them.
+Adoption installs `.workflow/`, writes `workflow.json`, and appends a short block
+to `AGENTS.md` pointing the agent at `.workflow/conventions.md`. It creates no
+scaffold, moves no research files, and does not change existing repositories. The
+title and authors are optional; they fill in components added later.
 
-The old copied workflow remains a local override: review outdated local rules
-selectively rather than replacing an existing AGENTS.md during adoption.
+Instructions copied from an older version of the workflow remain local overrides
+in AGENTS.md: review outdated rules selectively rather than replacing the file.
 
-## Shared method, local decisions
+## Layout
 
-The package contains three ongoing skills: research, manuscript/revision, and
-sharing/release. Setup remains `init-research-workflow`. Detailed figure guidance
-and optional templates stay in the hidden package until needed.
+```text
+skills/
+  research-setup/       start or adopt a project (the only skill installed globally)
+  research-work/        research, code, figures, and codebase releases
+  research-manuscript/  manuscript, referee responses, and outreach
+conventions.md          shared rules and routing to the skills
+tools/                  shared Python commands
+scaffold/               minimal new-project files
+templates/              optional components added with `add`
+workflow.py             install, init, adopt, and project commands
+```
 
-Local `AGENTS.md`, `project.md`, and `workflows/research.md`,
-`workflows/manuscript.md`, or `workflows/release.md` override shared defaults.
-Create override files only when there is something to override. Keep scientific
-models, conventions, numerical settings, and environment locks in the project.
-Private exploration cannot become a dependency of shared artifacts.
-
-## Python environments
-
-Use the existing shell Python during exploration and development. uv is the
-preferred Python dependency manager when needed, but setup creates no virtual
-environment or lockfile and installs no packages. The optional shared-code
-manifest starts with no dependencies. Add requirements as they arise; resolve,
-lock, and verify them in a clean environment when preparing a codebase release.
-Existing projects keep their environment choices unless migration is requested.
+The rules themselves live in `conventions.md` and the skills; this README only
+describes how to install and run the kit.
 
 ## Updates
 
@@ -141,24 +129,22 @@ python .workflow/workflow.py update --to v3.0.0
 python .workflow/workflow.py update --unpin
 ```
 
-`v3.0.0` above is an example for a future release, not a published release.
-Normal updates select the latest stable numeric release tag. Revisions predating
-this package format cannot be installed; legacy projects use adoption first.
-`--to` pins a tag or commit until explicitly unpinned. Updates execute the selected
-version's installer. They reject modified or unrecognized package contents.
+Normal updates select the latest stable numeric release tag; `--to` pins a tag or
+commit until `--unpin`. `check` reports an update only when the project uses an
+older release, and reports an unreleased development revision as such rather
+than suggesting a downgrade. Checks are cached for a day (`check --force`
+refreshes them) and never block research when the network is unavailable. Set
+`"updates": "off"` in `workflow.json` to disable them. Nothing is updated
+automatically, and no scheduler or background service is installed.
 
-`workflow.json` records source, revision, pin, installation mode, project metadata,
-and update policy. Unknown keys are preserved. Set `updates` to `ask` (default),
-`auto` (explicit opt-in), or `off`. Session-start checks are cached for a day;
-`check --force` refreshes them. Unavailable networks do not block research. No
-scheduler, daemon, package installation, or background service is installed.
-
-An update replaces only the owned hidden package and refreshes missing skill
-links. It does not change copied manuscript configuration, project instructions,
-scientific code, data, environments, or dependency locks. Compare updated
-`.workflow/templates/` with project-owned files manually when a configuration
-change is wanted. Keep `workflow.json` and the package snapshot in project version
-control for reproducible method versions; local check caches are ignored.
+Updates run the selected version's installer and refuse to replace a modified
+`.workflow/`. They change only `.workflow/`, never project instructions,
+scientific code, data, environments, dependency locks, or manuscript
+configuration; compare `.workflow/templates/` manually when you want a newer
+configuration. The central `workflow.py` forwards project commands to the
+project's own snapshot, so its pin always applies. Keep `workflow.json` and
+`.workflow/` in project version control; the check cache is ignored. Versions
+before 3.0 cannot be selected with `--to`; 2.x projects adopt the workflow instead.
 
 ## Develop improvements across projects
 
@@ -169,30 +155,22 @@ python /path/to/research-project-template/workflow.py adopt \
   --editable /path/to/research-project-template
 ```
 
-The pilot directly uses the checkout; changes take effect immediately. The manager
-never pulls or updates an editable installation. Other projects should use release
-snapshots so experiments do not change their instructions unexpectedly.
+The pilot's `.workflow/` links to the checkout's kit files, so changes take effect
+immediately; it is never pulled or updated by the manager. Other projects should
+use release snapshots so experiments do not change their instructions.
 
-When project work reveals a reusable lesson, change the shared package without
-project data, validate it, and record why in the project's journal. Release with
-explicit maintainer authorization; other projects then choose whether to update.
-Do not modify an installed snapshot as the source of a reusable fix.
-
-The canonical portable distribution remains the complete
-`skills/init-research-workflow/` folder. Its `assets/template/` is the minimal
-project scaffold; `assets/workflow/` is the shared runtime, ongoing skills, and
-optional templates. Copying that complete skill remains self-contained. No plugin
-or client-specific instruction file is required.
+When project work reveals a reusable lesson, change the kit without project data,
+validate it, and record why in the project's journal. Release with explicit
+maintainer authorization; other projects then choose whether to update.
 
 ## Validation
 
 ```sh
-python skills/init-research-workflow/scripts/init_project.py --check
-python -m unittest discover -s skills/init-research-workflow/tests -v
-TEST_LATEX=1 python -m unittest discover \
-  -s skills/init-research-workflow/tests -v
+python workflow.py init --check
+python -m unittest discover -s tests -v
+TEST_LATEX=1 python -m unittest discover -s tests -v
 ```
 
-The last command additionally exercises manuscript builds and cleanup using an
-installed Just/TeX toolchain. Figure rendering guidance has its separate optional
-`skills/init-research-workflow/tests/smoke-figures.py` check.
+The last command also exercises manuscript builds and cleanup with an installed
+Just/TeX toolchain. `tests/smoke-figures.py OUTPUT-DIRECTORY` checks the figure
+stack in an environment that has it installed.

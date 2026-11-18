@@ -1,3 +1,6 @@
 # Development-time Python caches (not part of the portable skill).
 __pycache__/
 *.py[cod]
+
+# Local workflow update-check cache
+/cache/

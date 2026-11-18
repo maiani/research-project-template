@@ -12,9 +12,11 @@ import sys
 import tempfile
 import time
 
-PACKAGE = Path(__file__).resolve().parent
-RELATIVE = Path('skills/init-research-workflow/assets/workflow')
+PACKAGE = Path(__file__).resolve().parents[1]
+RELATIVE = Path('tools/workflow.py')
+CONTENTS = ('workflow.py', 'conventions.md', 'skills', 'tools', 'templates', 'scaffold', '.gitignore')
 DEFAULT_SOURCE = 'https://github.com/maiani/research-project-template.git'
+VERSION = re.compile(r'v?(\d+)\.(\d+)\.(\d+)')
 BEGIN = '<!-- BEGIN research-workflow -->'
 END = '<!-- END research-workflow -->'
 
@@ -32,33 +34,34 @@ def write_json(path, data):
     path.write_text(json.dumps(data, indent=2) + '\n')
 
 
-def digest(package):
+def digest(package, selected=False):
+    """Hash package files; `selected` limits a source checkout to the kit contents."""
+    roots = [package / name for name in CONTENTS] if selected else [package]
+    files = [p for root in roots for p in ([root] if root.is_file() else root.rglob('*'))]
     return {str(p.relative_to(package)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(package.rglob('*')) if p.is_file()
-            and not any(x in {'__pycache__', 'cache'} for x in p.relative_to(package).parts)
-            and p.name != 'installed.json'}
+            for p in sorted(files) if p.is_file() and not any(x in {'__pycache__', 'cache', '.git'}
+                for x in p.relative_to(package).parts) and p.name != 'installed.json'}
+
+
+def source_revision(package):
+    """Return the commit of a clean kit checkout, else a hash of its contents."""
+    try:
+        # Only the kit's own repository counts, not a project repository around a snapshot.
+        if (Path(git(package, 'rev-parse', '--show-toplevel')).resolve() == package
+                and not git(package, 'status', '--porcelain', '--untracked-files=all', '--', *CONTENTS)):
+            return git(package, 'rev-parse', 'HEAD')
+    except (OSError, subprocess.SubprocessError):
+        pass
+    contents = json.dumps(digest(package, selected=True), sort_keys=True).encode()
+    return 'snapshot:' + hashlib.sha256(contents).hexdigest()
+
+
+def slugify(name):
+    return re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') or 'project'
 
 
 def runtime(source):
-    path = Path(source).resolve()
-    return path / RELATIVE if (path / RELATIVE).is_dir() else path
-
-
-def link_skills(root):
-    folder = root / '.agents/skills'
-    folder.mkdir(parents=True, exist_ok=True)
-    for skill in (root / '.workflow/skills').iterdir():
-        target = folder / skill.name
-        expected = root / '.workflow/skills' / skill.name
-        if target.is_symlink() and target.resolve() == expected.resolve():
-            continue
-        if target.exists() or target.is_symlink():
-            print(f'Preserved existing skill: {target}')
-            continue
-        try:
-            target.symlink_to(Path('../../.workflow/skills') / skill.name, target_is_directory=True)
-        except OSError:
-            print(f'Skill links unavailable; read {expected / "SKILL.md"} explicitly.')
+    return Path(source).resolve()
 
 
 def attach(root):
@@ -66,27 +69,20 @@ def attach(root):
     text = path.read_text() if path.exists() else '# Research project\n'
     # Adopt without replacing any existing local rules, even an earlier managed block.
     if BEGIN not in text:
+        # Keep this block stable: it is written once, so it routes only to the owned
+        # conventions file, which names the current skills.
         block = '\n\n' + BEGIN + '''
 ## Shared research workflow
 
-Local instructions and scientific choices override shared defaults.
-Read `.workflow/conventions.md` for shared boundaries and session continuity.
-Use only the relevant skill:
-
-- Research: `.workflow/skills/research-work/SKILL.md`
-- Manuscript and referee work: `.workflow/skills/research-manuscript/SKILL.md`
-- Shared artifacts and outreach: `.workflow/skills/research-release/SKILL.md`
-
-Check updates: `python .workflow/workflow.py check`.
-Create optional structure only for a current task: `python .workflow/workflow.py add --help`.
+At the start of each session, read `.workflow/conventions.md`; it routes to the
+skill for the current task. Local instructions and scientific choices override it.
 ''' + END + '\n'
         path.write_text(text.rstrip() + block)
-    link_skills(root)
 
 
 def ensure_owned(root):
     package = root / '.workflow'
-    if package.is_symlink():
+    if package.is_symlink() or read_json(root / 'workflow.json').get('mode') == 'editable':
         raise ValueError('Editable installation: manage the development checkout separately.')
     if package.exists():
         metadata = read_json(package / 'installed.json')
@@ -94,29 +90,43 @@ def ensure_owned(root):
             raise ValueError('Shared package has local changes or is not managed; preserve them before updating.')
 
 
-def install(root, source_package=PACKAGE, origin=DEFAULT_SOURCE, revision='development', pin='', editable=False):
+def install(root, source_package=PACKAGE, origin=DEFAULT_SOURCE, revision='development', pin='',
+            editable=False, verified=False, metadata=None):
     root = root.resolve(strict=True)
     source_package = source_package.resolve(strict=True)
     if not (source_package / 'workflow.py').is_file():
         raise ValueError('Source is not a research workflow package')
-    ensure_owned(root)
+    if not verified:
+        # During an update the calling version already checked the package with the
+        # rules that wrote installed.json; this version's rules may differ.
+        ensure_owned(root)
     target = root / '.workflow'
     attached = (root / 'workflow.json').exists()
     config = read_json(root / 'workflow.json')
     if revision == 'development':
-        revision = 'snapshot:' + hashlib.sha256(json.dumps(digest(source_package), sort_keys=True).encode()).hexdigest()
+        revision = source_revision(source_package)
     config.update(source=origin, revision=revision, pin=pin, mode='editable' if editable else 'snapshot')
     config.setdefault('updates', 'ask')
-    config.setdefault('slug', root.name)
+    config.setdefault('slug', slugify(root.name))
     config.setdefault('title', root.name)
     config.setdefault('author', '')
+    config.update(metadata or {})
     # Stage before replacing the owned package; retain a recoverable backup on failure.
     with tempfile.TemporaryDirectory(prefix='.workflow-install-', dir=root) as temporary:
         stage = Path(temporary) / 'package'
+        stage.mkdir()
         if editable:
-            stage.symlink_to(source_package, target_is_directory=True)
+            # Link only the kit contents, so a pilot sees what a snapshot contains.
+            for name in CONTENTS:
+                if (source_package / name).exists():
+                    (stage / name).symlink_to(source_package / name)
         else:
-            shutil.copytree(source_package, stage, ignore=shutil.ignore_patterns('__pycache__', 'cache', 'installed.json'))
+            for name in CONTENTS:
+                original = source_package / name
+                if original.is_dir():
+                    shutil.copytree(original, stage / name, ignore=shutil.ignore_patterns('__pycache__'))
+                else:
+                    shutil.copy2(original, stage / name)
             write_json(stage / 'installed.json', {'revision': revision, 'hashes': digest(stage)})
         backup = Path(temporary) / 'previous'
         if target.exists():
@@ -125,25 +135,17 @@ def install(root, source_package=PACKAGE, origin=DEFAULT_SOURCE, revision='devel
             stage.rename(target)
             write_json(root / 'workflow.json', config)
         except Exception:
-            if target.is_symlink():
-                target.unlink()
-            elif target.exists():
+            if target.exists():
                 shutil.rmtree(target)
             if backup.exists():
                 backup.rename(target)
             raise
-    if attached:
-        link_skills(root)
-    else:
+    if not attached:
         attach(root)
 
 
 def release(tags):
-    versions = []
-    for tag in tags:
-        match = re.fullmatch(r'v?(\d+)\.(\d+)\.(\d+)', tag)
-        if match:
-            versions.append((tuple(map(int, match.groups())), tag))
+    versions = [(tuple(map(int, match.groups())), tag) for tag in tags if (match := VERSION.fullmatch(tag))]
     if not versions:
         raise ValueError('No stable release tags available; use update --to REF explicitly.')
     return max(versions)[1]
@@ -163,7 +165,7 @@ def update(root, to=None, unpin=False, source=None):
         selected = pin or release(git(checkout, 'tag', '--list').splitlines())
         revision = git(checkout, 'rev-parse', '--verify', '--end-of-options', selected + '^{commit}')
         git(checkout, 'checkout', '--quiet', '--detach', revision)
-        script = checkout / RELATIVE / 'workflow.py'
+        script = checkout / RELATIVE
         if not script.is_file():
             raise ValueError('Selected revision predates the updateable workflow package.')
         # Install using the selected version, never old logic against new assets.
@@ -185,26 +187,35 @@ def check(root, force=False):
     if not force and time.time() - prior.get('time', 0) < 86400:
         print(prior['message'])
         return
-    available = False
     try:
         origin = config.get('source', DEFAULT_SOURCE)
         output = subprocess.check_output(['git', 'ls-remote', '--tags', '--', origin],
                                          text=True, stderr=subprocess.PIPE, timeout=20)
-        refs = dict(line.split()[::-1] for line in output.splitlines())
+        commits = {}
+        for line in output.splitlines():
+            sha, ref = line.split()
+            tag = ref.removeprefix('refs/tags/')
+            if tag.endswith('^{}'):
+                commits[tag.removesuffix('^{}')] = sha  # commit behind an annotated tag
+            else:
+                commits.setdefault(tag, sha)
         if config.get('pin'):
             message = f'Workflow pinned to {config["pin"]}; use update --unpin to follow releases.'
         else:
-            latest = release([ref.removeprefix('refs/tags/') for ref in refs if not ref.endswith('^{}')])
-            sha = refs.get(f'refs/tags/{latest}^{{}}', refs[f'refs/tags/{latest}'])
-            available = sha != config.get('revision')
-            message = f'{latest}: ' + ('update available; run python .workflow/workflow.py update' if available else 'up to date')
+            latest = release(commits)
+            installed = [tag for tag, sha in commits.items() if sha == config.get('revision')]
+            if latest in installed:
+                message = f'{latest}: up to date'
+            elif any(VERSION.fullmatch(tag) for tag in installed):
+                message = f'{latest}: update available; run python .workflow/workflow.py update'
+            else:
+                # A development checkout may be newer than every release: never suggest a downgrade.
+                message = f'Unreleased workflow revision installed; latest release is {latest}.'
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         message = f'Update check unavailable ({type(error).__name__}); research can continue.'
     cache.parent.mkdir(parents=True, exist_ok=True)
     write_json(cache, {'time': time.time(), 'message': message})
     print(message)
-    if available and config.get('updates') == 'auto':
-        update(root)
 
 
 def add(root, component):
@@ -214,8 +225,8 @@ def add(root, component):
     destination = root / destinations[component]
     if component in {'outreach', 'response'} and not (root / 'manuscript/.git').exists():
         raise ValueError('Set up the authoritative manuscript repository first.')
-    if destination.exists():
-        raise ValueError(f'{destination} already exists; compare templates manually, without overwriting local files.')
+    if component in {'manuscript', 'repository'} and destination.exists():
+        raise ValueError(f'{destination} already exists; preserve it rather than creating a new repository.')
     values = {'PROJECT_SLUG': config.get('slug', root.name), 'PROJECT_TITLE': config.get('title', root.name),
               'PAPER_TITLE': config.get('title', root.name), 'AUTHOR': config.get('author', ''),
               'AUTHORS': config.get('author', ''), 'DESCRIPTION': config.get('title', root.name),
@@ -227,17 +238,25 @@ def add(root, component):
             if path.is_file():
                 def replace(match):
                     value = values[match[1]]
+                    if not value:
+                        raise ValueError(f'{path.name} needs {match[1]}; record the project title and '
+                                         'authors in workflow.json first.')
                     return json.dumps(value, ensure_ascii=False)[1:-1] if path.suffix == '.toml' else value
                 path.write_text(re.sub(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}', replace, path.read_text()))
         if component in {'manuscript', 'repository'}:
             git(stage, 'init', '-b', 'main')
-        shutil.copytree(stage, destination)
+        # Optional files may join an existing folder, but never replace a file.
+        clashes = [str(path.relative_to(stage)) for path in stage.rglob('*')
+                   if path.is_file() and (destination / path.relative_to(stage)).exists()]
+        if clashes:
+            raise ValueError(f'{destination} already has {", ".join(clashes)}; compare the template manually.')
+        shutil.copytree(stage, destination, dirs_exist_ok=True)
     if component in {'manuscript', 'repository'}:
         ignore = root / '.gitignore'
         text = ignore.read_text() if ignore.exists() else ''
         if f'/{component}/' not in text.splitlines():
             ignore.write_text(text.rstrip() + f'\n/{component}/\n')
-    print(f'Created {destination}; no files staged or committed.')
+    print(f'Added {component} in {destination}; no files staged or committed.')
 
 
 def main():
@@ -247,6 +266,8 @@ def main():
     adopt = commands.add_parser('adopt', help='Attach to an existing project without restructuring it')
     adopt.add_argument('--editable', type=Path, help='Link a pilot project to a development checkout or runtime folder')
     adopt.add_argument('--source', default=DEFAULT_SOURCE)
+    adopt.add_argument('--title', help='project title, used by optional components')
+    adopt.add_argument('--author', help='project authors, used by optional components')
     commands.add_parser('status')
     check_parser = commands.add_parser('check')
     check_parser.add_argument('--force', action='store_true')
@@ -268,10 +289,11 @@ def main():
         if args.command == 'adopt':
             if (root / 'workflow.json').exists() or (root / '.workflow').exists():
                 raise ValueError('Workflow already attached; use update or preserve it before switching modes.')
+            metadata = {key: value for key, value in [('title', args.title), ('author', args.author)] if value}
             install(root, runtime(args.editable) if args.editable else PACKAGE,
-                    origin=args.source, editable=bool(args.editable))
+                    origin=args.source, editable=bool(args.editable), metadata=metadata)
         elif args.command == '_install':
-            install(args.target, origin=args.origin, revision=args.revision, pin=args.pin)
+            install(args.target, origin=args.origin, revision=args.revision, pin=args.pin, verified=True)
         elif not (root / 'workflow.json').is_file():
             raise ValueError('No workflow.json found; run from the project root or use --root.')
         elif args.command == 'status':

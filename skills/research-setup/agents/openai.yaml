@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Setup"
+  short_description: "Start or adopt a structured academic research project"
+  default_prompt: "Use $research-setup to start or adopt the research workflow in this project."

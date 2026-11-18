@@ -12,9 +12,9 @@ import subprocess
 import tempfile
 from urllib.parse import urlparse
 
-TEMPLATE = Path(__file__).resolve().parents[1] / 'assets' / 'template'
-WORKFLOW = TEMPLATE.parent / 'workflow'
-spec = importlib.util.spec_from_file_location('workflow', WORKFLOW / 'workflow.py')
+WORKFLOW = Path(__file__).resolve().parents[1]
+TEMPLATE = WORKFLOW / 'scaffold'
+spec = importlib.util.spec_from_file_location('workflow', WORKFLOW / 'tools/workflow.py')
 workflow = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(workflow)
 TOKEN = re.compile(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}')
@@ -96,8 +96,6 @@ def initialize(args):
     slug = args.rename_to or target.name
     if not re.fullmatch(r'[a-z0-9]+(-[a-z0-9]+)*', slug):
         raise ValueError('directory name must be lowercase kebab-case')
-    if args.slug and args.slug != slug:
-        raise ValueError('--slug must match the final directory name')
     destination = target.with_name(slug)
     if destination != target and destination.exists():
         raise ValueError(f'renamed target already exists: {destination}')
@@ -116,13 +114,10 @@ def initialize(args):
         (stage / 'journal/YYYY-MM-DD.md').rename(stage / f'journal/{day}.md')
         (stage / 'bibliography').mkdir(exist_ok=True)
         (stage / f'bibliography/{slug}.bib').write_text('% Project bibliography.\n', encoding='utf-8')
-        workflow.install(stage)
-        config = workflow.read_json(stage / 'workflow.json')
-        config.update(slug=slug, title=args.title, author=args.author)
-        workflow.write_json(stage / 'workflow.json', config)
-        if getattr(args, 'repository', False):
+        workflow.install(stage, metadata=dict(slug=slug, title=args.title, author=args.author))
+        if args.repository:
             workflow.add(stage, 'repository')
-        if remote or getattr(args, 'manuscript', False):
+        if remote or args.manuscript:
             workflow.add(stage, 'manuscript')
         if remote:
             checkout = Path(temporary) / 'overleaf'
@@ -145,7 +140,7 @@ def initialize(args):
         if not repo.exists():
             continue
         git(repo, 'init', '-b', 'main')
-        if getattr(args, 'commit', False) and not args.no_commit:
+        if args.commit:
             git(repo, 'add', '-A')
             git(repo, 'commit', '-m', f'Initialize {slug}' + (f' {name}' if name else ''))
     print(f'Initialized {target}. Edit project.md; develop privately in workspace/.')
@@ -156,13 +151,11 @@ def main():
     parser.add_argument('target', nargs='?')
     parser.add_argument('--check', action='store_true', help='validate the bundled template only')
     parser.add_argument('--rename-to')
-    parser.add_argument('--slug', help='optional check against the directory-derived slug')
     parser.add_argument('--title')
     parser.add_argument('--author')
     parser.add_argument('--desc')
     parser.add_argument('--status', default='Initial setup.')
     parser.add_argument('--overleaf-url')
-    parser.add_argument('--no-commit', action='store_true', help='compatibility flag; setup is unstaged by default')
     parser.add_argument('--commit', action='store_true', help='explicitly create initial local commits')
     parser.add_argument('--manuscript', action='store_true', help='create a manuscript repository now')
     parser.add_argument('--repository', action='store_true', help='create a shared artifact repository now')

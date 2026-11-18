@@ -23,7 +23,6 @@ __pycache__/
 *$py.class
 *.so
 .venv/
-.pixi
 
 # OS / editor cruft
 .DS_Store

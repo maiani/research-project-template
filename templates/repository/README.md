@@ -6,18 +6,9 @@ Create analytics, model, plot, and documentation directories only as needed.
 
 ## Development
 
-Use the existing shell Python environment and run scripts with `python`.
-No virtual environment or lockfile is required just to start developing code.
-`pyproject.toml` starts with no dependencies: add only what this codebase uses.
-Do not install the entire plotting stack or notebook tooling in anticipation.
-Prefer uv when dependency management becomes necessary; respect existing project
-choices. Ask before changing a shared environment. Use an isolated environment
-earlier only when a real compatibility problem or project requirement warrants it.
-
-uv project commands such as `uv run` and `uv sync` normally manage a `.venv/`.
-Use them for release verification rather than automatically during exploration.
-Record the Python and relevant library versions alongside important results,
-without freezing every exploratory environment.
+Run scripts with the Python environment you already use; no virtual environment
+or lockfile is needed to start. `pyproject.toml` starts with no dependencies: add
+only what this codebase uses, and lock them when preparing a release.
 
 ## Release preparation
 

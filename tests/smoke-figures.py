@@ -11,16 +11,16 @@ matplotlib.use("Agg")
 import numpy as np
 import svg
 import vectex
-from figworks import Figure, compose
-from figworks.matplotlib import theme_rc
+from figworks import Figure, compose, load_theme
 from lxml import etree
 
 out = Path(sys.argv[1])
 out.mkdir(parents=True, exist_ok=True)
 style = out / "style.md"
-style.write_text("---\nbase: aps\n---\n\n# Common figure style\n")
-with matplotlib.rc_context(theme_rc(style)):
-    fig = Figure(width="178mm", height="65mm", theme=style)
+style.write_text("---\nbase: paper\nfont:\n  family: DejaVu Sans\n---\n\n# Portable smoke-test style\n")
+theme = load_theme(style)
+with matplotlib.rc_context(theme.rc()):
+    fig = Figure(width="178mm", height="65mm", theme=style, background="white")
     panels = fig.grid([["setup", "signal"]], margins=("8mm", "5mm", "12mm", "12mm"), gap="20mm")
     fragment = vectex.render(r"$\Delta_{\rm ind}$", size_pt=9, cache_dir=out / ".vectex-cache")
     canvas = svg.SVG(width=200, height=120, viewBox="0 0 200 120", elements=[
@@ -37,6 +37,9 @@ with matplotlib.rc_context(theme_rc(style)):
     for label, panel in zip("ab", panels.values(), strict=True):
         fig.label(label, panel.nw)
     for suffix in ("svg", "pdf", "png"):
+        report = fig.check(target=suffix)
+        assert report.ok, report
+        print(f"{suffix} preflight: {report}")
         fig.save(out / f"composition.{suffix}")
     fig.save(out / "repeat.svg")
     assert (out / "composition.svg").read_bytes() == (out / "repeat.svg").read_bytes()

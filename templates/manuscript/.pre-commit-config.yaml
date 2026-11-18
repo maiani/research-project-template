@@ -1,12 +1,12 @@
 repos:
   - repo: https://github.com/jolars/badness-pre-commit
-    rev: v0.27.0
+    rev: v0.29.1
     hooks:
       - id: badness-format
         args: [--config, badness.toml]
         exclude: '(^|/).*_diff\.tex$'
   - repo: https://github.com/maiani/pynakes
-    rev: v0.7.0
+    rev: v0.9.0
     hooks:
       - id: pynakes-lint
       - id: pynakes-keys-check

@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent
-SKILL = ROOT / 'skills/init-research-workflow'
+SKILL = ROOT / 'skills/research-setup'
 
 
 def main():
@@ -29,17 +29,21 @@ def main():
             print(f'Already installed: {target}')
             return
         if target.exists() or target.is_symlink():
-            parser.error(f'Preserving existing skill at {target}; choose another --skills-dir or review it first.')
+            parser.error(f'Preserving existing skill at {target}; review it before installing.')
         folder.mkdir(parents=True, exist_ok=True)
         try:
             target.symlink_to(SKILL, target_is_directory=True)
         except OSError as error:
             parser.exit(1, f'Cannot link the skill: {error}\n'
-                        f'Copy the complete folder {SKILL} to {target}, or ask the agent to read its SKILL.md explicitly.\n')
-        print(f'Installed {target}\nAsk your agent: Use init-research-workflow to start or adopt this project.')
+                        f'Keep the complete kit at {ROOT} and ask the agent to read {SKILL / "SKILL.md"}.\n')
+        print(f'Installed {target}\nAsk your agent: Use research-setup to start or adopt this project.')
         return
-    script = SKILL / ('scripts/init_project.py' if args.command == 'init'
-                      else 'assets/workflow/workflow.py')
+    if args.command == 'init':
+        script = ROOT / 'tools/init_project.py'
+    else:
+        # Commands for an existing project run its own pinned snapshot, not this checkout.
+        local = Path.cwd() / '.workflow/tools/workflow.py'
+        script = local if args.command != 'adopt' and local.is_file() else ROOT / 'tools/workflow.py'
     command = [sys.executable, str(script)]
     if args.command != 'init':
         command.append(args.command)
