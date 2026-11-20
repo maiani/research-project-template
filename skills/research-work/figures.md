@@ -29,8 +29,10 @@ kit installation and adoption; install figure tools when figure work needs them.
 
 - Keep one authoritative model; do not hand-copy parameters into figure scripts.
   Distinguish computed results, measured data, and illustrative schematics.
-- Use manuscript-numbered names when numbering is established and stable element
-  IDs across revisions. Keep theme choices in the project's style.md.
+- Once numbering is established, name generators and outputs by manuscript figure
+  (`Fig4-description.py` → `Fig4-description.pdf`; `FigS2-…` for supplementary
+  figures), and keep element IDs stable across revisions. Omit in-figure titles;
+  the caption carries them. Keep theme choices in the project's style.md.
 - Retain editable SVG and the generator. Export requested delivery formats and a
   PNG preview; inspect the rendering and report any outstanding visual review.
 - Run FigWorks preflight for the intended export. Review warnings and unchecked

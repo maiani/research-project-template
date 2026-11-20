@@ -50,6 +50,10 @@ class WorkflowTests(unittest.TestCase):
         revisions = []
         for version in ['3.0.0', '3.1.0']:
             (repo / RELATIVE / 'release.txt').write_text(version)
+            if version == '3.0.0':
+                # Like the real 3.0.0, this installer records no version label.
+                script = repo / 'tools/workflow.py'
+                script.write_text(script.read_text().replace('config.update(version=version, ', 'config.update('))
             # The second release adds new installer behavior, proving re-execution.
             if version == '3.1.0':
                 script = repo / 'tools/workflow.py'
@@ -89,6 +93,13 @@ class WorkflowTests(unittest.TestCase):
         for absent in ['manuscript', 'repository', 'guides', 'workspace/scratch', 'slides']:
             self.assertFalse((self.project / absent).exists())
         self.assertFalse(self.git(self.project, 'ls-files'))
+        # The shared-workflow block sits once under the title, ahead of the project map.
+        agents = (self.project / 'AGENTS.md').read_text()
+        self.assertEqual(agents.count('<!-- BEGIN research-workflow -->'), 1)
+        self.assertLess(agents.index('<!-- BEGIN research-workflow -->'), agents.index('## Project layout'))
+        self.assertIn('`paper-manuscript`', agents)
+        self.assertNotIn('{{', agents)
+        self.assertTrue(json.loads((self.project / 'workflow.json').read_text())['version'])
         for component in ['manuscript', 'repository', 'response', 'outreach']:
             self.run_cli('add', component)
         self.assertTrue((self.project / 'manuscript/submission/response.tex').exists())
@@ -129,8 +140,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.config()['revision'], revisions[0])
         self.run_cli('update', '--unpin')
         self.assertEqual(self.config()['revision'], revisions[1])
+        self.assertEqual(self.config()['version'], 'v3.1.0')
         self.assertTrue(self.config()['new_installer_ran'])
         self.run_cli('update', '--to', 'v3.0.0')
+        # The older installer keeps the previous label; the updater must correct it.
+        self.assertEqual(self.config()['version'], 'v3.0.0')
         self.assertEqual(self.config()['custom'], {'preserve': True})
         self.assertEqual((self.project / 'model.py').read_text(), 'MODEL = "fixed"\n')
         self.assertEqual((self.project / 'AGENTS.md').read_text(), 'Local instructions stay exactly unchanged\n')

@@ -20,8 +20,8 @@ python <kit-root>/workflow.py adopt [--title "<title>"] [--author "<authors>"]
 
 Pass the title and authors when known; optional components use them later.
 Only this setup skill is registered centrally. Adoption installs a pinned copy of
-the method, including the research and manuscript skills, and adds a short
-AGENTS.md block routing to it, without creating project folders or replacing
+the method, including the research, repository, and manuscript skills, and adds a
+short AGENTS.md block routing to it, without creating project folders or replacing
 existing instructions. Local rules remain overrides; review conflicting old
 defaults selectively. Adoption does not authorize changes
 to models, environments, manuscript settings, remotes, or publication status.

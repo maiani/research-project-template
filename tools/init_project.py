@@ -78,7 +78,7 @@ def initialize(args):
     if args.check:
         render_template(files, dict.fromkeys(
             ['PROJECT_TITLE', 'PAPER_TITLE', 'DESCRIPTION', 'AUTHORS', 'AUTHOR',
-             'STATUS', 'PROJECT_SLUG', 'DATE_ISO'], 'check'))
+             'STATUS', 'PROJECT_SLUG', 'DATE_ISO', 'WORKFLOW_BLOCK'], 'check'))
         print('Template check passed.')
         return
     if not args.target or not args.title or not args.author:
@@ -103,7 +103,7 @@ def initialize(args):
     remote = overleaf_remote(args.overleaf_url) if args.overleaf_url else None
     values = dict(PROJECT_SLUG=slug, PROJECT_TITLE=args.title, PAPER_TITLE=args.title,
                   AUTHORS=args.author, AUTHOR=args.author, DESCRIPTION=args.desc or args.title,
-                  STATUS=args.status, DATE_ISO=day)
+                  STATUS=args.status, DATE_ISO=day, WORKFLOW_BLOCK=workflow.BLOCK)
     rendered = render_template(files, values)
     # Prepare everything before touching the target, including any network clone.
     with tempfile.TemporaryDirectory(prefix='research-init-') as temporary:

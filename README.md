@@ -105,7 +105,8 @@ in AGENTS.md: review outdated rules selectively rather than replacing the file.
 ```text
 skills/
   research-setup/       start or adopt a project (the only skill installed globally)
-  research-work/        research, code, figures, and codebase releases
+  research-work/        research, calculations, code, and figures
+  research-repository/  promotion, shared code, collaboration, and codebase releases
   research-manuscript/  manuscript, referee responses, and outreach
 conventions.md          shared rules and routing to the skills
 tools/                  shared Python commands
@@ -128,6 +129,10 @@ python .workflow/workflow.py update
 python .workflow/workflow.py update --to v3.0.0
 python .workflow/workflow.py update --unpin
 ```
+
+`workflow.json` records the installed `version`: a release tag such as `v3.0.0`,
+or the nearest tag plus commits for an unreleased revision. The project's
+AGENTS.md points there rather than copying a number that updates would make stale.
 
 Normal updates select the latest stable numeric release tag; `--to` pins a tag or
 commit until `--unpin`. `check` reports an update only when the project uses an
@@ -174,3 +179,7 @@ TEST_LATEX=1 python -m unittest discover -s tests -v
 The last command also exercises manuscript builds and cleanup with an installed
 Just/TeX toolchain. `tests/smoke-figures.py OUTPUT-DIRECTORY` checks the figure
 stack in an environment that has it installed.
+
+## License
+
+MIT; see [LICENSE](LICENSE).

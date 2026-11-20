@@ -1,14 +1,14 @@
 # AI agent instructions — research workflow skill development
 
 This repository develops the agent-neutral research workflow kit, not a research
-project. Three sibling skills live under `skills/`; `tools/` holds shared Python
+project. Four sibling skills live under `skills/`; `tools/` holds shared Python
 commands, `scaffold/` the minimal project files, and `templates/` the optional
 components added with `add`. `conventions.md` holds shared rules and names the
 task skills.
 
 `workflow.py install` registers only `research-setup` centrally. Projects reach
-`research-work` and `research-manuscript` through their pinned `.workflow/`
-snapshot: the AGENTS.md block points only to `conventions.md`, so skills can be
+`research-work`, `research-repository`, and `research-manuscript` through their
+pinned `.workflow/` snapshot: the AGENTS.md block points only to `conventions.md`, so skills can be
 renamed in a release without editing project files. Keep project snapshots
 independent of the development checkout unless editable mode was explicitly chosen.
 

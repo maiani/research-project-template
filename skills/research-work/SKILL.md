@@ -1,6 +1,6 @@
 ---
 name: research-work
-description: Develop, verify, and release research calculations, numerical experiments, code, and figures in a project that uses the shared research workflow.
+description: Develop and verify research calculations, numerical experiments, code, and figures in a project that uses the shared research workflow.
 ---
 
 # Research Work
@@ -16,9 +16,8 @@ calculation. Reuse the existing model and evidence.
 - Distinguish hypotheses, numerical evidence, and established results. Validate
   with relevant limits, convergence checks, or independent calculations rather
   than judging success from an attractive plot.
-- Keep analytic checks in self-contained scripts (for example in
-  `repository/analytics/`) that end with `assert`-style comparisons against the
-  closed-form results stated in the paper.
+- Keep analytic checks in self-contained scripts that end with `assert`-style
+  comparisons against the closed-form results stated in the paper.
 - Leave reproducible commands and evidence beside experiments, summarize the
   current conclusion and next action in project.md, and record decisions in the
   journal.
@@ -59,18 +58,10 @@ pynakes lint bibliography/<slug>.bib
 ```
 
 Otherwise add BibTeX entries manually. Keep local copies of useful sources in
-`bibliography/`; they are not tracked by Git.
+`bibliography/<slug>.files/`, pynakes' material folder, which Git ignores.
 
-## Shared code and releases
+## Shared code
 
-Use `python .workflow/workflow.py add repository` when the author approves
-promoting work to shared artifacts. Shared code must run without private files.
-For a codebase release:
-
-- Declare the actual dependencies in `pyproject.toml`, run `uv lock`, and verify
-  representative outputs in a clean environment with `uv sync --locked` and
-  `uv run --locked`. Keep `pyproject.toml` and `uv.lock` in the release.
-- Document system tools, fonts, and hardware separately; the lockfile does not
-  capture them. Preserve an existing release lock unless a change is intentional.
-- Check the results against the manuscript, keep numerical settings and model
-  choices explicit, and record the workflow revision used.
+Promoting work to `repository/`, organizing and documenting it, collaborator
+branches, and codebase releases follow the research-repository skill. Calculations
+and checks run in shared code still follow this skill.

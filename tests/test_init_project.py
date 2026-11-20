@@ -2,6 +2,7 @@
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -139,6 +140,12 @@ class InitializationTests(unittest.TestCase):
                        check=True, env=self.env, stdout=subprocess.PIPE)
         self.assertTrue((self.target / '.workflow/skills/research-work/figures.md').exists())
         self.assertFalse((self.target / 'scripts').exists())
+        # Every skill the conventions route to must ship in the project snapshot.
+        conventions = (self.target / '.workflow/conventions.md').read_text()
+        routed = re.findall(r'`\.workflow/(skills/[a-z-]+/SKILL\.md)`', conventions)
+        self.assertIn('skills/research-repository/SKILL.md', routed)
+        for path in routed:
+            self.assertTrue((self.target / '.workflow' / path).exists(), path)
 
     def test_clone_failure_preserves_empty_target(self):
         args = type('Args', (), dict(target=str(self.target), check=False, title='Test',

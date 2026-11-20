@@ -19,6 +19,18 @@ DEFAULT_SOURCE = 'https://github.com/maiani/research-project-template.git'
 VERSION = re.compile(r'v?(\d+)\.(\d+)\.(\d+)')
 BEGIN = '<!-- BEGIN research-workflow -->'
 END = '<!-- END research-workflow -->'
+# Written once and never refreshed, so it names no skill or version number: it routes
+# to the owned conventions file and to workflow.json, which updates keep current.
+BLOCK = BEGIN + '''
+## Shared research workflow
+
+This project uses the shared research workflow pinned in `.workflow/`;
+`workflow.json` records its version and update settings. Change either only with
+`python .workflow/workflow.py`. At the start of each session, read
+`.workflow/conventions.md`: it sets the session routine and repository rules and
+names the skill for the current task. Local instructions and scientific choices
+override it.
+''' + END
 
 
 def git(path, *args):
@@ -56,6 +68,17 @@ def source_revision(package):
     return 'snapshot:' + hashlib.sha256(contents).hexdigest()
 
 
+def version_label(package, revision):
+    """Name a kit revision for people: its release tag, or the nearest tag plus commits."""
+    try:
+        if Path(git(package, 'rev-parse', '--show-toplevel')).resolve() == package.resolve():
+            label = git(package, 'describe', '--tags', '--always', '--match', 'v[0-9]*')
+            return label + ('+modified' if revision.startswith('snapshot:') else '')
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return 'unreleased'
+
+
 def slugify(name):
     return re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') or 'project'
 
@@ -68,16 +91,9 @@ def attach(root):
     path = root / 'AGENTS.md'
     text = path.read_text() if path.exists() else '# Research project\n'
     # Adopt without replacing any existing local rules, even an earlier managed block.
+    # New projects already place the block in their scaffold.
     if BEGIN not in text:
-        # Keep this block stable: it is written once, so it routes only to the owned
-        # conventions file, which names the current skills.
-        block = '\n\n' + BEGIN + '''
-## Shared research workflow
-
-At the start of each session, read `.workflow/conventions.md`; it routes to the
-skill for the current task. Local instructions and scientific choices override it.
-''' + END + '\n'
-        path.write_text(text.rstrip() + block)
+        path.write_text(text.rstrip() + '\n\n' + BLOCK + '\n')
 
 
 def ensure_owned(root):
@@ -105,7 +121,10 @@ def install(root, source_package=PACKAGE, origin=DEFAULT_SOURCE, revision='devel
     config = read_json(root / 'workflow.json')
     if revision == 'development':
         revision = source_revision(source_package)
-    config.update(source=origin, revision=revision, pin=pin, mode='editable' if editable else 'snapshot')
+    # An editable install follows its checkout, so any recorded label would go stale.
+    version = 'editable' if editable else version_label(source_package, revision)
+    config.update(version=version, source=origin, revision=revision, pin=pin,
+                  mode='editable' if editable else 'snapshot')
     config.setdefault('updates', 'ask')
     config.setdefault('slug', slugify(root.name))
     config.setdefault('title', root.name)
@@ -171,6 +190,10 @@ def update(root, to=None, unpin=False, source=None):
         # Install using the selected version, never old logic against new assets.
         subprocess.run([sys.executable, str(script), '_install', str(root),
                         '--origin', origin, '--revision', revision, '--pin', pin], check=True)
+        # Installers before 3.1 keep a previous label; name the selected revision here.
+        config = read_json(root / 'workflow.json')
+        config['version'] = version_label(checkout, revision)
+        write_json(root / 'workflow.json', config)
         print(f'Updated shared workflow to {selected} ({revision[:12]}). Project files preserved.')
 
 

@@ -3,6 +3,39 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## 3.1.0 — 2026-11-20
+
+### Migration from 3.0
+
+Run `python .workflow/workflow.py update` in each project; `workflow.json` then
+records the readable version. Existing AGENTS.md files are not rewritten: their
+block still routes to conventions.md, which now names the repository skill. To
+add the new project layout, adapt it from `.workflow/scaffold/AGENTS.md` by hand.
+
+### Changes
+
+- Added the `research-repository` skill for `repository/`, parallel to
+  `research-manuscript`: promotion, organization and README provenance,
+  collaborator branches, and authorized codebase releases, including a review
+  before anything becomes public and tagging releases to manuscript versions.
+  `research-work` now covers research, calculations, code, and figures wherever
+  the code lives. Existing projects receive the skill on update, without changes
+  to their AGENTS.md.
+- New projects' AGENTS.md again opens like 2.x: the shared-workflow block sits
+  under the title, followed by a project layout giving each folder's contents,
+  Git repository with the project's own remote names, and visibility, which
+  folders are created on demand, and the workspace → repository → manuscript flow.
+  Adopted projects still receive only the appended block; the rules stay in
+  conventions.md for both.
+- `workflow.json` records a readable `version` (release tag, or nearest tag plus
+  commits), kept correct after updates, including rollbacks to 3.0.0. AGENTS.md
+  points to it instead of copying a number, so updates still never edit it.
+- Restored 2.x rules lost in 3.0: the journal path and `## Previous session`
+  heading, honest reporting of fragile effects, Overleaf as the authoritative
+  manuscript, squash-merging shared code into `main` at public revisions, figure
+  file naming, and no in-figure titles.
+- Corrected the bibliography note: only `bibliography/<slug>.files/` is ignored.
+
 ## 3.0.0 — 2026-11-18
 
 ### Migration from 2.x
