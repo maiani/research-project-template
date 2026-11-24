@@ -33,12 +33,12 @@ for all agents; do not initialize this development checkout as a research projec
   selected release to update.
 - Create optional project structure only when a current task requires it.
 - Updates may replace owned method files, never project science or configuration.
-- Keep skill instructions and helper scripts outside the bundled template.
-- Keep structural moves reviewable; do not stage or commit without authorization.
-- Do not copy development-only files into generated research projects.
+- Keep skill instructions, helper scripts, and other development-only files out of
+  the bundled template and generated research projects.
 - Preserve the template’s private `workspace/`, shared `repository/`,
   authoritative `manuscript/`, bibliography, and journal boundaries.
-- Do not commit, push, or publish changes without explicit user approval.
+- Keep structural moves reviewable; do not stage, commit, push, or publish without
+  explicit user approval.
 
 ## Validation
 

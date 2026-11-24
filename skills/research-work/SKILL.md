@@ -18,9 +18,6 @@ calculation. Reuse the existing model and evidence.
   than judging success from an attractive plot.
 - Keep analytic checks in self-contained scripts that end with `assert`-style
   comparisons against the closed-form results stated in the paper.
-- Leave reproducible commands and evidence beside experiments, summarize the
-  current conclusion and next action in project.md, and record decisions in the
-  journal.
 
 ## Code
 
@@ -59,9 +56,3 @@ pynakes lint bibliography/<slug>.bib
 
 Otherwise add BibTeX entries manually. Keep local copies of useful sources in
 `bibliography/<slug>.files/`, pynakes' material folder, which Git ignores.
-
-## Shared code
-
-Promoting work to `repository/`, organizing and documenting it, collaborator
-branches, and codebase releases follow the research-repository skill. Calculations
-and checks run in shared code still follow this skill.

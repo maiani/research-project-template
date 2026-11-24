@@ -18,7 +18,7 @@ def main():
                          help='agent skill directory (default: ~/.agents/skills)')
     commands.add_parser('init', help='Initialize an empty project; use init --help for options',
                         add_help=False)
-    for name in ['adopt', 'status', 'check', 'update', 'add']:
+    for name in ['adopt', 'status', 'update', 'add']:
         commands.add_parser(name, help=f'Run {name} in the current project', add_help=False)
     args, rest = parser.parse_known_args()
     if args.command == 'install':

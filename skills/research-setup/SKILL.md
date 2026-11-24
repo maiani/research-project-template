@@ -47,9 +47,9 @@ python <kit-root>/workflow.py init "$PWD" \
   [--rename-to "<confirmed-slug>"] [--overleaf-url "<url-or-id>"]
 ```
 
-Quote each value. Setup needs only Python 3.11+ and Git. Nothing is staged or
-committed by default. Use `--commit` only with explicit authorization for initial
-local commits; never commit into an Overleaf checkout.
+Quote each value. Setup needs only Python 3.11+ and Git. It commits the private
+root repository locally. Pass `--commit` to also commit new nested repositories,
+only with explicit authorization; never commit into an Overleaf checkout.
 
 Default setup creates the project context, private workspace, bibliography,
 journal, and shared package. Add `--manuscript` or `--repository` only if that work

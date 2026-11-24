@@ -1,9 +1,7 @@
 # {{ PROJECT_TITLE }}
 
 Agent instructions for this research project, shared by all agents; read this file
-explicitly if your client does not load it automatically. Project context and
-status live in `project.md`, and session history in `journal/`. Rules written here
-override the shared workflow.
+explicitly if your client does not load it automatically.
 
 {{ WORKFLOW_BLOCK }}
 

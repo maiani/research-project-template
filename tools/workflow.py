@@ -10,14 +10,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 
 PACKAGE = Path(__file__).resolve().parents[1]
 RELATIVE = Path('tools/workflow.py')
 CONTENTS = ('workflow.py', 'conventions.md', 'skills', 'tools', 'templates', '.gitignore', 'LICENSE')
 # Placeholders that templates may use; `init` fills all of them, `add` all but WORKFLOW_BLOCK.
 PLACEHOLDERS = ('PROJECT_SLUG', 'PROJECT_TITLE', 'PAPER_TITLE', 'AUTHOR', 'AUTHORS',
-                'DESCRIPTION', 'STATUS', 'DATE_ISO', 'WORKFLOW_BLOCK')
+                'DESCRIPTION', 'DATE_ISO', 'WORKFLOW_BLOCK')
 TOKEN = re.compile(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}')
 DEFAULT_SOURCE = 'https://github.com/maiani/research-project-template.git'
 VERSION = re.compile(r'v?(\d+)\.(\d+)\.(\d+)')
@@ -55,7 +54,7 @@ def digest(package, selected=False):
     roots = [package / name for name in CONTENTS] if selected else [package]
     files = [p for root in roots for p in ([root] if root.is_file() else root.rglob('*'))]
     return {str(p.relative_to(package)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(files) if p.is_file() and not any(x in {'__pycache__', 'cache', '.git'}
+            for p in sorted(files) if p.is_file() and not any(x in {'__pycache__', '.git'}
                 for x in p.relative_to(package).parts) and p.name != 'installed.json'}
 
 
@@ -120,14 +119,30 @@ def attach(root):
         path.write_text(text.rstrip() + '\n\n' + BLOCK + '\n')
 
 
-def ensure_owned(root):
+def ownership_problem(root):
+    """Why an update would refuse to replace `.workflow/`, or None."""
     package = root / '.workflow'
     if package.is_symlink() or read_json(root / 'workflow.json').get('mode') == 'editable':
-        raise ValueError('Editable installation: manage the development checkout separately.')
+        return 'Editable installation: manage the development checkout separately.'
     if package.exists():
         metadata = read_json(package / 'installed.json')
         if not metadata or metadata.get('hashes') != digest(package):
-            raise ValueError('Shared package has local changes or is not managed; preserve them before updating.')
+            return 'Shared package has local changes or is not managed; preserve them before updating.'
+    return None
+
+
+def ensure_owned(root):
+    if problem := ownership_problem(root):
+        raise ValueError(problem)
+
+
+def status(root):
+    """Describe the installed workflow without using the network."""
+    config = read_json(root / 'workflow.json')
+    pin = f', pinned to {config["pin"]}' if config.get('pin') else ''
+    print(f'Workflow {config.get("version", "unknown")} ({config.get("mode", "snapshot")}{pin})')
+    print(f'Source: {config.get("source", DEFAULT_SOURCE)}')
+    print(ownership_problem(root) or '.workflow/ matches the installed revision.')
 
 
 def install(root, source_package=PACKAGE, origin=DEFAULT_SOURCE, revision='development', pin='',
@@ -149,7 +164,7 @@ def install(root, source_package=PACKAGE, origin=DEFAULT_SOURCE, revision='devel
     version = 'editable' if editable else version_label(source_package, revision)
     config.update(version=version, source=origin, revision=revision, pin=pin,
                   mode='editable' if editable else 'snapshot')
-    config.setdefault('updates', 'ask')
+    config.pop('updates', None)  # retired update-check setting
     config.setdefault('slug', slugify(root.name))
     config.setdefault('title', root.name)
     config.setdefault('author', '')
@@ -194,7 +209,7 @@ def release(tags):
     return max(versions)[1]
 
 
-def update(root, to=None, unpin=False, source=None):
+def update(root, to=None, unpin=False, source=None, dry_run=False):
     config = read_json(root / 'workflow.json')
     ensure_owned(root)
     origin = source or config.get('source', DEFAULT_SOURCE)
@@ -211,6 +226,16 @@ def update(root, to=None, unpin=False, source=None):
         script = checkout / RELATIVE
         if not script.is_file():
             raise ValueError('Selected revision predates the updateable workflow package.')
+        if dry_run:
+            target = f'{selected}{" (pinned)" if pin else ""} ({revision[:12]})'
+            installed = config.get('version', 'unknown')
+            if revision == config.get('revision'):
+                print(f'Up to date: {target}.')
+                return
+            print(f'Would update from {installed} to {target}; nothing changed.')
+            if not VERSION.fullmatch(installed):
+                print('The installed revision is not a release; the selected one may be older.')
+            return
         # Install using the selected version, never old logic against new assets.
         subprocess.run([sys.executable, str(script), '_install', str(root),
                         '--origin', origin, '--revision', revision, '--pin', pin], check=True)
@@ -219,50 +244,6 @@ def update(root, to=None, unpin=False, source=None):
         config['version'] = version_label(checkout, revision)
         write_json(root / 'workflow.json', config)
         print(f'Updated shared workflow to {selected} ({revision[:12]}). Project files preserved.')
-
-
-def check(root, force=False):
-    config = read_json(root / 'workflow.json')
-    if config.get('updates') == 'off':
-        print('Update checks disabled.')
-        return
-    if config.get('mode') == 'editable':
-        print('Editable workflow: updates are managed in the development checkout.')
-        return
-    cache = root / '.workflow/cache/check.json'
-    prior = read_json(cache)
-    if not force and time.time() - prior.get('time', 0) < 86400:
-        print(prior['message'])
-        return
-    try:
-        origin = config.get('source', DEFAULT_SOURCE)
-        output = subprocess.check_output(['git', 'ls-remote', '--tags', '--', origin],
-                                         text=True, stderr=subprocess.PIPE, timeout=20)
-        commits = {}
-        for line in output.splitlines():
-            sha, ref = line.split()
-            tag = ref.removeprefix('refs/tags/')
-            if tag.endswith('^{}'):
-                commits[tag.removesuffix('^{}')] = sha  # commit behind an annotated tag
-            else:
-                commits.setdefault(tag, sha)
-        if config.get('pin'):
-            message = f'Workflow pinned to {config["pin"]}; use update --unpin to follow releases.'
-        else:
-            latest = release(commits)
-            installed = [tag for tag, sha in commits.items() if sha == config.get('revision')]
-            if latest in installed:
-                message = f'{latest}: up to date'
-            elif any(VERSION.fullmatch(tag) for tag in installed):
-                message = f'{latest}: update available; run python .workflow/workflow.py update'
-            else:
-                # A development checkout may be newer than every release: never suggest a downgrade.
-                message = f'Unreleased workflow revision installed; latest release is {latest}.'
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
-        message = f'Update check unavailable ({type(error).__name__}); research can continue.'
-    cache.parent.mkdir(parents=True, exist_ok=True)
-    write_json(cache, {'time': time.time(), 'message': message})
-    print(message)
 
 
 def add(root, component):
@@ -277,7 +258,7 @@ def add(root, component):
     values = {'PROJECT_SLUG': config.get('slug', root.name), 'PROJECT_TITLE': config.get('title', root.name),
               'PAPER_TITLE': config.get('title', root.name), 'AUTHOR': config.get('author', ''),
               'AUTHORS': config.get('author', ''), 'DESCRIPTION': config.get('title', root.name),
-              'DATE_ISO': datetime.now(timezone.utc).date().isoformat(), 'STATUS': 'Initial setup.'}
+              'DATE_ISO': datetime.now(timezone.utc).date().isoformat()}
     with tempfile.TemporaryDirectory(prefix='research-component-') as temporary:
         stage = Path(temporary) / component
         shutil.copytree(PACKAGE / 'templates' / component, stage)
@@ -308,14 +289,13 @@ def main():
     adopt.add_argument('--source', default=DEFAULT_SOURCE)
     adopt.add_argument('--title', help='project title, used by optional components')
     adopt.add_argument('--author', help='project authors, used by optional components')
-    commands.add_parser('status')
-    check_parser = commands.add_parser('check')
-    check_parser.add_argument('--force', action='store_true')
-    upgrade = commands.add_parser('update')
+    commands.add_parser('status', help='Show the installed version and local changes, offline')
+    upgrade = commands.add_parser('update', help='Install the latest release or a selected version')
     group = upgrade.add_mutually_exclusive_group()
-    group.add_argument('--to')
-    group.add_argument('--unpin', action='store_true')
-    upgrade.add_argument('--source', help='Use a repository URL or local Git repository')
+    group.add_argument('--to', metavar='REF', help='install and pin a release tag or commit')
+    group.add_argument('--unpin', action='store_true', help='follow the latest release again')
+    upgrade.add_argument('--source', metavar='URL', help='use another repository URL or local Git repository')
+    upgrade.add_argument('--dry-run', action='store_true', help='report what would be installed; change nothing')
     create = commands.add_parser('add', help='Create an optional component only when needed')
     create.add_argument('component', choices=['manuscript', 'repository', 'outreach', 'response'])
     internal = commands.add_parser('_install', help=argparse.SUPPRESS)
@@ -337,11 +317,9 @@ def main():
         elif not (root / 'workflow.json').is_file():
             raise ValueError('No workflow.json found; run from the project root or use --root.')
         elif args.command == 'status':
-            print(json.dumps(read_json(root / 'workflow.json'), indent=2))
-        elif args.command == 'check':
-            check(root, args.force)
+            status(root)
         elif args.command == 'update':
-            update(root, args.to, args.unpin, args.source)
+            update(root, args.to, args.unpin, args.source, args.dry_run)
         elif args.command == 'add':
             add(root, args.component)
     except (ValueError, OSError, subprocess.SubprocessError) as error:

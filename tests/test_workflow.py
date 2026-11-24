@@ -57,8 +57,8 @@ class WorkflowTests(unittest.TestCase):
             # The second release adds new installer behavior, proving re-execution.
             if version == '3.1.0':
                 script = repo / 'tools/workflow.py'
-                script.write_text(script.read_text().replace("    config.setdefault('updates', 'ask')",
-                    "    config['new_installer_ran'] = True\n    config.setdefault('updates', 'ask')"))
+                script.write_text(script.read_text().replace("    config.setdefault('slug', slugify(root.name))",
+                    "    config['new_installer_ran'] = True\n    config.setdefault('slug', slugify(root.name))"))
             self.git(repo, 'add', '.')
             self.git(repo, 'commit', '-m', version)
             self.git(repo, 'tag', 'v' + version)
@@ -99,7 +99,9 @@ class WorkflowTests(unittest.TestCase):
                        stdout=subprocess.PIPE)
         for absent in ['manuscript', 'repository', 'guides', 'workspace/scratch', 'slides']:
             self.assertFalse((self.project / absent).exists())
-        self.assertFalse(self.git(self.project, 'ls-files'))
+        # The private root starts with a clean local commit.
+        self.git(self.project, 'rev-parse', '--verify', 'HEAD')
+        self.assertFalse(self.git(self.project, 'status', '--porcelain'))
         # The shared-workflow block sits once under the title, ahead of the project map.
         agents = (self.project / 'AGENTS.md').read_text()
         self.assertEqual(agents.count('<!-- BEGIN research-workflow -->'), 1)
@@ -154,6 +156,9 @@ class WorkflowTests(unittest.TestCase):
         self.run_cli('update', '--to', 'v3.0.0')
         # The older installer keeps the previous label; the updater must correct it.
         self.assertEqual(self.config()['version'], 'v3.0.0')
+        report = self.run_cli('status').stdout
+        self.assertIn('Workflow v3.0.0 (snapshot, pinned to v3.0.0)', report)
+        self.assertIn('matches the installed revision', report)
         self.assertEqual(self.config()['custom'], {'preserve': True})
         self.assertEqual((self.project / 'model.py').read_text(), 'MODEL = "fixed"\n')
         self.assertEqual((self.project / 'AGENTS.md').read_text(), 'Local instructions stay exactly unchanged\n')
@@ -161,34 +166,28 @@ class WorkflowTests(unittest.TestCase):
         conventions.write_text('Local work')
         self.run_cli('update', '--unpin', ok=False)
         self.assertEqual(conventions.read_text(), 'Local work')
+        # Status reports the refusal offline; a dry run refuses like the update itself.
+        self.assertIn('local changes', self.run_cli('status').stdout)
+        self.run_cli('update', '--dry-run', ok=False)
 
-    def test_check_cache_off_and_no_automatic_update(self):
+    def test_dry_run_reports_without_updating(self):
         repo, revisions = self.releases()
         self.run_cli('adopt', '--source', str(repo))
-        # A development snapshot is not a release: report it, never offer a downgrade.
-        self.assertIn('Unreleased', self.run_cli('check').stdout)
+        # A development snapshot is not a release: say the selected one may be older.
+        self.assertIn('not a release', self.run_cli('update', '--dry-run').stdout)
         self.run_cli('update', '--to', 'v3.0.0')
-        self.config(pin='')
-        self.assertIn('update available', self.run_cli('check', '--force').stdout)
-        self.assertTrue((self.project / '.workflow/cache/check.json').exists())
-        self.config(source=str(self.base / 'missing'))
-        self.assertIn('update available', self.run_cli('check').stdout)
-        self.assertIn('unavailable', self.run_cli('check', '--force').stdout)
-        self.config(updates='off')
-        self.assertIn('disabled', self.run_cli('check').stdout)
-        # The removed 'auto' policy no longer installs anything.
-        self.config(source=str(repo), updates='auto')
-        self.assertIn('update available', self.run_cli('check', '--force').stdout)
+        self.assertIn('Up to date: v3.0.0 (pinned)', self.run_cli('update', '--dry-run').stdout)
+        self.assertIn('to v3.1.0', self.run_cli('update', '--dry-run', '--unpin').stdout)
         self.assertEqual(self.config()['revision'], revisions[0])
-        self.run_cli('update')
-        self.assertEqual(self.config()['revision'], revisions[1])
-        self.assertIn('v3.1.0: up to date', self.run_cli('check', '--force').stdout)
+        self.assertEqual(self.config()['pin'], 'v3.0.0')
+        self.config(source=str(self.base / 'missing'))
+        self.run_cli('update', '--dry-run', ok=False)
 
     def test_clean_release_checkout_is_up_to_date(self):
         repo, revisions = self.releases()
         self.run_cli('adopt', '--source', str(repo), script=repo / 'tools/workflow.py')
         self.assertEqual(self.config()['revision'], revisions[1])
-        self.assertIn('v3.1.0: up to date', self.run_cli('check').stdout)
+        self.assertIn('Up to date: v3.1.0', self.run_cli('update', '--dry-run').stdout)
 
     def test_adoption_metadata_for_later_components(self):
         self.project = self.base / 'My Paper'
@@ -233,7 +232,7 @@ class WorkflowTests(unittest.TestCase):
             self.assertFalse((package / absent).exists())
         self.run_cli('add', 'repository')
         self.run_cli('update', ok=False)
-        self.assertIn('development checkout', self.run_cli('check').stdout)
+        self.assertIn('Editable installation', self.run_cli('status').stdout)
 
     def test_optional_files_join_existing_folders(self):
         self.run_cli('adopt', '--author', 'A. Author')

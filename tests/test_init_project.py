@@ -72,6 +72,16 @@ class InitializationTests(unittest.TestCase):
         self.assertEqual(self.git(self.target / 'repository', 'check-ignore', '.venv/test'), '.venv/test')
         self.assertEqual(len(self.git(self.target / 'manuscript', 'check-ignore', 'aux/a.aux', 'out/a.pdf').splitlines()), 2)
 
+    def test_missing_git_identity_skips_root_commit(self):
+        home = self.root / 'home'
+        home.mkdir()
+        env = {k: v for k, v in self.env.items() if not k.startswith('GIT_') and k != 'EMAIL'}
+        env.update(HOME=str(home), XDG_CONFIG_HOME=str(home), GIT_CONFIG_NOSYSTEM='1',
+                   GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='user.useConfigOnly', GIT_CONFIG_VALUE_0='true')
+        result = self.run_init(env=env)
+        self.assertIn('Skipped the initial commit', result.stdout)
+        self.assertTrue((self.target / 'project.md').exists())
+
     def test_rejections_leave_target_untouched(self):
         for flags in [('--rename-to', '../escape'), ('--rename-to', 'Not_Kebab'), ('--date', '../bad'),
                       ('--overleaf-url', 'https://evil.example/overleaf.com/project/12345678'),
@@ -96,7 +106,11 @@ class InitializationTests(unittest.TestCase):
         self.assertTrue((renamed / '.git/HEAD').exists())
         self.assertTrue((renamed / '.agents').is_dir())
         self.assertTrue((renamed / '.claude').is_dir())
-        self.assertFalse(self.git(renamed, 'ls-files'))  # nothing is staged by default
+        # The private root is committed by default; nested repositories are not.
+        self.git(renamed, 'rev-parse', '--verify', 'HEAD')
+        self.assertFalse(self.git(renamed, 'status', '--porcelain'))
+        for name in ['repository', 'manuscript']:
+            self.assertFalse(self.git(renamed / name, 'ls-files'))
         self.assertEqual(self.git(self.root, 'remote', 'get-url', 'origin'), 'https://example.invalid/parent')
         self.assertFalse(self.git(self.root, 'ls-files'))
 
@@ -119,7 +133,7 @@ class InitializationTests(unittest.TestCase):
         self.git(remote, 'commit', '-m', 'Original')
         args = type('Args', (), dict(target=str(self.target), check=False, title='Test',
                     author='Test Author', rename_to=None, date='2030-01-02', overleaf_url='12345678',
-                    desc=None, status='Initial setup.', commit=False, manuscript=False, repository=False))()
+                    desc=None, commit=False, manuscript=False, repository=False))()
         with patch.object(initializer, 'overleaf_remote', return_value=str(remote)):
             initializer.initialize(args)
         manuscript = self.target / 'manuscript'
@@ -173,7 +187,7 @@ class InitializationTests(unittest.TestCase):
     def test_clone_failure_preserves_empty_target(self):
         args = type('Args', (), dict(target=str(self.target), check=False, title='Test',
                     author='Test', rename_to='renamed', date='2030-01-02', overleaf_url='12345678',
-                    desc=None, status='Initial setup.', commit=False, manuscript=False, repository=False))()
+                    desc=None, commit=False, manuscript=False, repository=False))()
         with patch.object(initializer, 'overleaf_remote', return_value=str(self.root / 'missing')):
             with self.assertRaises(subprocess.CalledProcessError):
                 initializer.initialize(args)

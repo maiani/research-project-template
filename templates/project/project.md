@@ -10,7 +10,7 @@
 
 ## Current status
 
-{{ STATUS }}
+Initial setup.
 
 Status last reviewed: {{ DATE_ISO }}.
 

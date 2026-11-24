@@ -65,8 +65,9 @@ python /path/to/research-project-template/workflow.py init /path/to/project \
 ```
 
 This creates `project.md`, `AGENTS.md`, a private `workspace/`, a bibliography, a
-dated journal, and the hidden `.workflow/` snapshot. The root Git repository is
-initialized, but nothing is staged or committed unless you pass `--commit`.
+dated journal, and the hidden `.workflow/` snapshot. The private root Git
+repository gets a local initial commit; pass `--commit` to also commit new
+manuscript or artifact repositories.
 `--manuscript` and `--repository` create those components immediately;
 `--overleaf-url URL` clones an existing Overleaf manuscript instead, preserving
 its content and never committing into it.
@@ -125,7 +126,7 @@ From a project root:
 
 ```sh
 python .workflow/workflow.py status
-python .workflow/workflow.py check
+python .workflow/workflow.py update --dry-run
 python .workflow/workflow.py update
 python .workflow/workflow.py update --to v3.0.0
 python .workflow/workflow.py update --unpin
@@ -136,12 +137,11 @@ or the nearest tag plus commits for an unreleased revision. The project's
 AGENTS.md points there rather than copying a number that updates would make stale.
 
 Normal updates select the latest stable numeric release tag; `--to` pins a tag or
-commit until `--unpin`. `check` reports an update only when the project uses an
-older release, and reports an unreleased development revision as such rather
-than suggesting a downgrade. Checks are cached for a day (`check --force`
-refreshes them) and never block research when the network is unavailable. Set
-`"updates": "off"` in `workflow.json` to disable them. Nothing is updated
-automatically, and no scheduler or background service is installed.
+commit until `--unpin`. `--dry-run` reports what an update with the same options
+would install and changes nothing; it warns when an unreleased revision is
+installed, since the selected release may be older. `status` works offline: it
+shows the installed version and pin, and whether `.workflow/` has local changes
+that would make an update refuse.
 
 Updates run the selected version's installer and refuse to replace a modified
 `.workflow/`. They change only `.workflow/`, never project instructions,
@@ -149,7 +149,7 @@ scientific code, data, environments, dependency locks, or manuscript
 configuration; compare `.workflow/templates/` manually when you want a newer
 configuration. The central `workflow.py` forwards project commands to the
 project's own snapshot, so its pin always applies. Keep `workflow.json` and
-`.workflow/` in project version control; the check cache is ignored. Versions
+`.workflow/` in project version control. Versions
 before 3.0 cannot be selected with `--to`; 2.x projects adopt the workflow instead.
 
 ## Develop improvements across projects

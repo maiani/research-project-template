@@ -86,7 +86,7 @@ def initialize(args):
     remote = overleaf_remote(args.overleaf_url) if args.overleaf_url else None
     values = dict(PROJECT_SLUG=slug, PROJECT_TITLE=args.title, PAPER_TITLE=args.title,
                   AUTHORS=args.author, AUTHOR=args.author, DESCRIPTION=args.desc or args.title,
-                  STATUS=args.status, DATE_ISO=day, WORKFLOW_BLOCK=workflow.BLOCK)
+                  DATE_ISO=day, WORKFLOW_BLOCK=workflow.BLOCK)
     rendered = workflow.render(TEMPLATE, values)
     # Prepare everything before touching the target, including any network clone.
     with tempfile.TemporaryDirectory(prefix='research-init-') as temporary:
@@ -123,9 +123,14 @@ def initialize(args):
         if not repo.exists():
             continue
         git(repo, 'init', '-b', 'main')
-        if args.commit:
-            git(repo, 'add', '-A')
+        # The private root is always committed locally; nested repositories only on request.
+        if name and not args.commit:
+            continue
+        git(repo, 'add', '-A')
+        try:
             git(repo, 'commit', '-m', f'Initialize {slug}' + (f' {name}' if name else ''))
+        except subprocess.CalledProcessError:
+            print(f'Skipped the initial commit in {repo}; configure a Git identity, then commit.')
     print(f'Initialized {target}. Edit project.md; develop privately in workspace/.')
 
 
@@ -137,9 +142,8 @@ def main():
     parser.add_argument('--title')
     parser.add_argument('--author')
     parser.add_argument('--desc')
-    parser.add_argument('--status', default='Initial setup.')
     parser.add_argument('--overleaf-url')
-    parser.add_argument('--commit', action='store_true', help='explicitly create initial local commits')
+    parser.add_argument('--commit', action='store_true', help='also commit new nested repositories locally')
     parser.add_argument('--manuscript', action='store_true', help='create a manuscript repository now')
     parser.add_argument('--repository', action='store_true', help='create a shared artifact repository now')
     parser.add_argument('--date', default=os.environ.get('BOOTSTRAP_DATE', date.today().isoformat()))

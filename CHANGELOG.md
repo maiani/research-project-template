@@ -3,6 +3,49 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## 3.3.0 — 2026-11-24
+
+### Migration from 3.2
+
+Run `python .workflow/workflow.py update` in each project. Agents then start
+journal entries with a provenance line and commit the root repository locally
+after each entry; existing journal entries and AGENTS.md files are unchanged. The
+commit rule also applies to adopted projects: if an adopted project's root
+repository is shared and should stay manual, say so in its AGENTS.md.
+
+Agents no longer check for updates. `check` is replaced by `update --dry-run`,
+and `init --status` is removed. Updating drops the unused `updates` setting from
+workflow.json.
+
+### Changes
+
+- Agent-written journal entries begin with a provenance line giving the model
+  ID, harness and version, and session ID, with `unknown` rather than a guess.
+  Entries mark the author's decisions and authorizations as theirs, and each
+  check records who ran it: a rerun in the same session is not independent. A
+  new project's first journal entry states that `workflow.py init` created it.
+- The private root repository is committed locally after each journal entry,
+  naming the entry, with large generated data left untracked. Commits in
+  `repository/` and `manuscript/` still require authorization. `init` now makes
+  the initial root commit by default, and `--commit` only adds initial commits in
+  new nested repositories. Without a Git identity, `init` warns and leaves the
+  root staged instead of failing.
+- Simplified the project commands to `adopt`, `add`, `status`, and `update`.
+  Agents no longer check for updates at session start. `update --dry-run`
+  replaces `check`: it reports what an update with the same `--to`, `--unpin`,
+  or `--source` would install, refuses where the update would, and changes
+  nothing. `status` now works offline and reads as text: version, pin, source,
+  and whether `.workflow/` has local changes. The daily check cache,
+  `check --force`, the `updates` setting, and the unused `init --status` option
+  are gone; new projects' project.md starts with the status "Initial setup.".
+- Removed rules repeated in files agents load together. conventions.md no longer
+  restates the AGENTS.md override, update-check caching, or the squash-merge and
+  superseded-prototype details kept in the research-repository skill.
+  research-work drops its journaling summary and its pointer to
+  research-repository, which conventions already routes. New projects' AGENTS.md
+  intro and journal header are shorter. With the new rules, conventions.md is
+  still slightly shorter than in 3.2.0.
+
 ## 3.2.0 — 2026-11-24
 
 ### Migration from 3.1
