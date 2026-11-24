@@ -144,8 +144,31 @@ class InitializationTests(unittest.TestCase):
         conventions = (self.target / '.workflow/conventions.md').read_text()
         routed = re.findall(r'`\.workflow/(skills/[a-z-]+/SKILL\.md)`', conventions)
         self.assertIn('skills/research-repository/SKILL.md', routed)
+        self.assertIn('skills/manuscript-preflight/SKILL.md', routed)
+        preflight = self.target / '.workflow/skills/manuscript-preflight'
+        result = subprocess.run(
+            [sys.executable, str(preflight / 'scripts/check_manuscript.py'), '--help'],
+            text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((preflight / 'references/checklist.md').is_file())
+        self.assertEqual((self.target / '.workflow/LICENSE').read_text(),
+                         (SKILL / 'LICENSE').read_text())
+        self.assertFalse((self.target / '.workflow/tests').exists())
         for path in routed:
             self.assertTrue((self.target / '.workflow' / path).exists(), path)
+
+    def test_check_covers_every_template(self):
+        kit = self.root / 'kit'
+        shutil.copytree(SKILL, kit, ignore=shutil.ignore_patterns('.git', '__pycache__'))
+        for placeholder in ['NOT_A_KEY', 'WORKFLOW_BLOCK']:
+            readme = kit / 'templates/outreach/README.md'
+            original = readme.read_text()
+            readme.write_text(original + '{{ %s }}\n' % placeholder)
+            result = subprocess.run([sys.executable, str(kit / 'tools/init_project.py'), '--check'],
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(f'unknown placeholder {placeholder} in outreach/README.md', result.stderr)
+            readme.write_text(original)
 
     def test_clone_failure_preserves_empty_target(self):
         args = type('Args', (), dict(target=str(self.target), check=False, title='Test',

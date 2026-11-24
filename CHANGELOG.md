@@ -3,6 +3,40 @@
 This file records changes to the research workflow itself, independently of any
 paper, dataset, or public-code release created from the template.
 
+## 3.2.0 — 2026-11-24
+
+### Migration from 3.1
+
+Run `python .workflow/workflow.py update` in each project. The new-project files
+moved from `.workflow/scaffold/` to `.workflow/templates/project/`; compare
+against that path when adapting an existing AGENTS.md by hand.
+
+Rerun `python workflow.py install` (with the same `--skills-dir`) from the central
+checkout to register `manuscript-preflight`. If you installed the standalone
+`editorial-presubmission-check` skill, remove it so only one audit skill remains.
+
+### Changes
+
+- Added the `manuscript-preflight` skill for pre-submission editorial and
+  source-readiness audits and follow-up rechecks. It is integrated from
+  [maiani/manuscript-preflight](https://github.com/maiani/manuscript-preflight)
+  at `e635adf` (v1.1), by the same author under the same license, and works
+  outside workflow projects too: its checklist and standard-library checker live
+  in its own folder. The checker now reads build logs from the latexmkrc
+  `$aux_dir` or `$out_dir`, so it finds logs in kit manuscripts without options;
+  `--log-dir` overrides this. In workflow projects, reports are kept in
+  `workspace/preflight/` and noted in the journal. `install` registers it
+  centrally beside `research-setup`, so it is available for any manuscript.
+- Merged `scaffold/` into `templates/project/`. `init` and `add` share one
+  placeholder renderer, so an unknown placeholder is a clear error in both, and
+  `init --check` now validates every template, not only the project files.
+- The project snapshot includes the kit's LICENSE.
+- New projects no longer get a root `.gitattributes`, a leftover from when the
+  manuscript lived in the root repository; the manuscript repository keeps its
+  own, now covering only its justfile. `add outreach` no longer creates an empty
+  `visuals/` placeholder. The project `.gitignore` drops manuscript-only LaTeX
+  patterns. Existing project files are unchanged.
+
 ## 3.1.0 — 2026-11-20
 
 ### Migration from 3.0

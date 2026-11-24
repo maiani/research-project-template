@@ -1,0 +1,98 @@
+% Deliberately broken example manuscript for testing the
+% manuscript-preflight skill and check_manuscript.py.
+% The topic, authors, and references are entirely fictional.
+% Each problem below is annotated with the check that should catch it.
+\documentclass[11pt]{article}
+
+\usepackage{graphicx}
+\usepackage{epsfig}      % deprecated package
+\usepackage{subfigure}   % deprecated package
+\usepackage{amsmath}
+
+% TODO: check with coauthors whether to keep the stability section  <- private note in comment
+
+\title{Convergence of an Adaptive Mesh Refinement Scheme for a Model Diffusion Problem}
+\author{A. Author\\Department of Applied Mathematics, Example University}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We analyze the convergence of an AMR scheme for a model diffusion problem.
+% "AMR" used before being defined anywhere -> abbreviation audit
+We prove that the scheme achieves a convergence rate of 2.1 in the energy norm.
+% Abstract says 2.1, body says 1.8 -> abstract/body consistency
+\end{abstract}
+
+\section{Introduction}
+\label{sec1} % opaque label
+
+Adaptive discretization methods have been studied extensively
+\cite{doe2015}. Recent work \cite{smith2018,nonexistent2024} extends these
+ideas to time-dependent problems.
+% nonexistent2024 is not in refs.bib -> undefined citation
+
+As shown in Fig. 2, the error decreases monotonically with refinement level.
+% hardcoded figure number instead of \ref -> semantic check
+
+{\bf Definition 1.} A mesh is \emph{admissible} if every element satisfies
+the minimum-angle condition and neighboring elements differ by at most one
+refinement level.
+% bold-text pseudo-environment -> should be a real definition environment
+
+\section{Model Problem}
+\label{sec:model}
+
+The model equation reads
+$$
+\partial_t u = \nabla \cdot \left( \kappa \nabla u \right) + f,
+$$
+% $$...$$ plain-TeX display math, and the equation is unnumbered/unlabeled
+where the meaning of $\kappa$ and $f$ is not introduced anywhere nearby.
+% symbol-introduction audit
+
+\begin{equation}
+\label{sec:model} % duplicate label (already used for the section above)
+\eta_K^2 = h_{\rm eff}^2 \| f + \nabla \cdot ( \kappa \nabla u_h ) \|_K^2
+% math-mode {\rm ...} -> INFO with \mathrm suggestion (not a WARN)
+\end{equation}
+
+The estimator is reliable and efficient, see Eq.~\eqref{eq:efficiency}.
+% undefined reference: no \label{eq:efficiency} exists
+
+\section{Results}
+\label{sec:results}
+
+The scheme achieves a convergence rate of 1.8 in the energy norm.
+
+\begin{table}[t]
+\caption{Parameters used in the numerical experiments.}
+\label{tab:parameters}
+\includegraphics[width=\columnwidth]{/home/username/plots/table_screenshot.png}
+% table shipped as a screenshot AND via an absolute local path
+\end{table}
+
+\begin{figure}[t]
+\includegraphics[width=\columnwidth]{fig2_final_v3.pdf}
+% on disk the file is Fig2_final_v3.pdf -> case-mismatch ERROR (arXiv-fatal);
+% also an opaque, versioned figure filename
+\caption{Results.} % caption cannot stand alone
+\label{fig2} % opaque label
+\end{figure}
+
+Figure~\ref{fig2} shows the main result.
+
+\section{Conclusion}
+\label{sec:conclusion} % this label is never referenced -> unused-label INFO
+
+We conclude that the adaptive scheme converges at the optimal rate for the
+model problem.
+\todo{Tighten the outlook paragraph before submission.}
+% draft note command left in the source -> draft-artifact check
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

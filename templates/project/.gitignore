@@ -1,4 +1,5 @@
-# LaTeX build artefacts (keep .tex, .bib, .pdf)
+# LaTeX build files from notes compiled in workspace/; the manuscript has its
+# own repository and ignore rules.
 *.aux
 *.bbl
 *.blg
@@ -13,9 +14,6 @@
 *.nav
 *.snm
 *.vrb
-*.fff
-*.ttt
-*Notes.bib
 
 # Python
 __pycache__/

@@ -1,16 +1,18 @@
 # AI agent instructions — research workflow skill development
 
 This repository develops the agent-neutral research workflow kit, not a research
-project. Four sibling skills live under `skills/`; `tools/` holds shared Python
-commands, `scaffold/` the minimal project files, and `templates/` the optional
-components added with `add`. `conventions.md` holds shared rules and names the
-task skills.
+project. Five sibling skills live under `skills/`; `tools/` holds the kit's own
+Python commands, and `templates/` the files they copy into projects: `project/`
+for `init` and the optional components added with `add`. `conventions.md` holds
+shared rules and names the task skills.
 
-`workflow.py install` registers only `research-setup` centrally. Projects reach
-`research-work`, `research-repository`, and `research-manuscript` through their
-pinned `.workflow/` snapshot: the AGENTS.md block points only to `conventions.md`, so skills can be
-renamed in a release without editing project files. Keep project snapshots
-independent of the development checkout unless editable mode was explicitly chosen.
+`workflow.py install` registers two skills centrally: `research-setup`, and
+`manuscript-preflight`, which also works outside workflow projects. Projects reach
+`research-work`, `research-repository`, `research-manuscript`, and
+`manuscript-preflight` through their pinned `.workflow/` snapshot: the AGENTS.md
+block points only to `conventions.md`, so skills can be renamed in a release
+without editing project files. Keep project snapshots independent of the
+development checkout unless editable mode was explicitly chosen.
 
 ## Bootstrapping a new project
 
@@ -22,7 +24,13 @@ for all agents; do not initialize this development checkout as a research projec
 ## Development rules
 
 - Edit shared skills under `skills/`, tools under `tools/`, and project assets
-  under `scaffold/` and `templates/`.
+  under `templates/`.
+- Keep each skill usable without the kit whenever its task allows: keep its
+  references and the scripts only it runs inside its folder, link only within
+  that folder, and use `.workflow/` context when present rather than requiring it.
+  `tools/` holds only commands the kit itself runs.
+- Keep `tools/workflow.py` at that path: installed projects run it from a newly
+  selected release to update.
 - Create optional project structure only when a current task requires it.
 - Updates may replace owned method files, never project science or configuration.
 - Keep skill instructions and helper scripts outside the bundled template.

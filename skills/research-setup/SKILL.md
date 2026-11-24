@@ -6,7 +6,7 @@ description: Initialize a minimal research project or adopt the shared research 
 # Set Up a Research Workflow
 
 Resolve this SKILL.md through any symlink. The kit root is two directories above
-its containing folder and holds workflow.py, tools/, scaffold/, and templates/.
+its containing folder and holds workflow.py, tools/, and templates/.
 Keep the complete kit together; individual skill folders are not standalone.
 
 ## Existing projects
@@ -19,12 +19,13 @@ python <kit-root>/workflow.py adopt [--title "<title>"] [--author "<authors>"]
 ```
 
 Pass the title and authors when known; optional components use them later.
-Only this setup skill is registered centrally. Adoption installs a pinned copy of
-the method, including the research, repository, and manuscript skills, and adds a
-short AGENTS.md block routing to it, without creating project folders or replacing
-existing instructions. Local rules remain overrides; review conflicting old
-defaults selectively. Adoption does not authorize changes
-to models, environments, manuscript settings, remotes, or publication status.
+Only this setup skill and manuscript-preflight are registered centrally. Adoption
+installs a pinned copy of the method, including the research, repository, and
+manuscript skills, and adds a short AGENTS.md block routing to it, without
+creating project folders or replacing existing instructions. Local rules remain
+overrides; review conflicting old defaults selectively. Adoption does not
+authorize changes to models, environments, manuscript settings, remotes, or
+publication status.
 Use `adopt --editable /path/to/development-checkout` only when a pilot project is
 explicitly intended to follow development changes immediately.
 

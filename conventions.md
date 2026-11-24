@@ -13,6 +13,8 @@ Read the skill for the current task, and its linked references only when needed:
   `.workflow/skills/research-repository/SKILL.md`
 - Manuscript, referee responses, and outreach:
   `.workflow/skills/research-manuscript/SKILL.md`
+- Pre-submission editorial audit and follow-up checks:
+  `.workflow/skills/manuscript-preflight/SKILL.md`
 
 ## Session continuity
 

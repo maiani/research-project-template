@@ -1,4 +1,0 @@
-# Git for Windows commonly enables core.autocrlf. Keep files executed by
-# Git Bash on LF endings so their shebangs remain valid.
-*.sh text eol=lf
-justfile text eol=lf

@@ -1,0 +1,15 @@
+% Stale version sibling, kept deliberately: the checker must auto-detect
+% main.tex as the manuscript root and SKIP this file (reporting that it
+% did so). Scanning both as one corpus would produce phantom findings —
+% e.g. the label below would make 'sec1' look multiply defined.
+\documentclass[11pt]{article}
+
+\begin{document}
+
+\section{Introduction}
+\label{sec1}
+
+Old draft kept around by accident. Should also be removed from any public
+source bundle.
+
+\end{document}

@@ -1,3 +1,2 @@
-# Preserve Git Bash shebangs and Just recipes in standalone manuscript clones.
-*.sh text eol=lf
+# Keep Just's bash-shebang recipes on LF endings in Windows clones.
 justfile text eol=lf

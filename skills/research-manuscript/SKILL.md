@@ -45,6 +45,12 @@ preserve unresolved author decisions.
   `python .workflow/workflow.py add response` adds a starting template under
   `manuscript/submission/`. Map each response to manuscript edits and evidence.
 
+## Pre-submission audit
+
+For an editorial and submission-readiness audit near submission, use
+[manuscript-preflight](../manuscript-preflight/SKILL.md). Run it again when needed
+to recheck corrections; it is not part of every manuscript edit or build.
+
 ## Outreach
 
 For a requested lay summary, graphical abstract, or press material, run

@@ -14,7 +14,11 @@ import time
 
 PACKAGE = Path(__file__).resolve().parents[1]
 RELATIVE = Path('tools/workflow.py')
-CONTENTS = ('workflow.py', 'conventions.md', 'skills', 'tools', 'templates', 'scaffold', '.gitignore')
+CONTENTS = ('workflow.py', 'conventions.md', 'skills', 'tools', 'templates', '.gitignore', 'LICENSE')
+# Placeholders that templates may use; `init` fills all of them, `add` all but WORKFLOW_BLOCK.
+PLACEHOLDERS = ('PROJECT_SLUG', 'PROJECT_TITLE', 'PAPER_TITLE', 'AUTHOR', 'AUTHORS',
+                'DESCRIPTION', 'STATUS', 'DATE_ISO', 'WORKFLOW_BLOCK')
+TOKEN = re.compile(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}')
 DEFAULT_SOURCE = 'https://github.com/maiani/research-project-template.git'
 VERSION = re.compile(r'v?(\d+)\.(\d+)\.(\d+)')
 BEGIN = '<!-- BEGIN research-workflow -->'
@@ -77,6 +81,26 @@ def version_label(package, revision):
     except (OSError, subprocess.SubprocessError):
         pass
     return 'unreleased'
+
+
+def render(template, values):
+    """Return each text file of a template folder, relative to it, with placeholders filled."""
+    rendered = {}
+    for path in sorted(template.rglob('*')):
+        if not path.is_file() or path.is_symlink():
+            continue
+        relative = path.relative_to(template)
+        def replace(match):
+            if match[1] not in values:
+                raise ValueError(f'unknown placeholder {match[1]} in {template.name}/{relative}')
+            if not values[match[1]]:
+                raise ValueError(f'{relative} needs {match[1]}; record the project title and '
+                                 'authors in workflow.json first.')
+            # TOML strings need escaped quotes and backslashes.
+            return json.dumps(values[match[1]], ensure_ascii=False)[1:-1] if path.suffix == '.toml' \
+                else values[match[1]]
+        rendered[relative] = TOKEN.sub(replace, path.read_text(encoding='utf-8'))
+    return rendered
 
 
 def slugify(name):
@@ -257,15 +281,8 @@ def add(root, component):
     with tempfile.TemporaryDirectory(prefix='research-component-') as temporary:
         stage = Path(temporary) / component
         shutil.copytree(PACKAGE / 'templates' / component, stage)
-        for path in stage.rglob('*'):
-            if path.is_file():
-                def replace(match):
-                    value = values[match[1]]
-                    if not value:
-                        raise ValueError(f'{path.name} needs {match[1]}; record the project title and '
-                                         'authors in workflow.json first.')
-                    return json.dumps(value, ensure_ascii=False)[1:-1] if path.suffix == '.toml' else value
-                path.write_text(re.sub(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}', replace, path.read_text()))
+        for relative, text in render(PACKAGE / 'templates' / component, values).items():
+            (stage / relative).write_text(text, encoding='utf-8')
         if component in {'manuscript', 'repository'}:
             git(stage, 'init', '-b', 'main')
         # Optional files may join an existing folder, but never replace a file.

@@ -71,15 +71,22 @@ class WorkflowTests(unittest.TestCase):
         command = [sys.executable, str(entry), 'install', '--skills-dir', str(skills)]
         for _ in range(2):
             subprocess.run(command, check=True, capture_output=True)
+        central = ['manuscript-preflight', 'research-setup']
+        self.assertEqual(sorted(path.name for path in skills.iterdir()), central)
+        for name in central:
+            self.assertEqual((skills / name).resolve(), (SKILL / 'skills' / name).resolve())
         installed = skills / 'research-setup'
-        self.assertEqual([path.name for path in skills.iterdir()], ['research-setup'])
-        self.assertEqual(installed.resolve(), (SKILL / 'skills/research-setup').resolve())
         installed.unlink()
         installed.mkdir()
         (installed / 'SKILL.md').write_text('User-owned skill')
-        result = subprocess.run(command, capture_output=True)
+        (skills / 'manuscript-preflight').unlink()
+        result = subprocess.run(command, capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Preserving existing skills', result.stderr)
         self.assertEqual((installed / 'SKILL.md').read_text(), 'User-owned skill')
+        # A preserved skill does not block linking the others.
+        self.assertEqual((skills / 'manuscript-preflight').resolve(),
+                         (SKILL / 'skills/manuscript-preflight').resolve())
         subprocess.run([sys.executable, str(entry), 'adopt'], cwd=self.project,
                        check=True, capture_output=True)
         self.assertTrue((self.project / 'workflow.json').exists())
@@ -104,6 +111,8 @@ class WorkflowTests(unittest.TestCase):
             self.run_cli('add', component)
         self.assertTrue((self.project / 'manuscript/submission/response.tex').exists())
         self.assertTrue((self.project / 'manuscript/outreach/README.md').exists())
+        # Folders the README describes are created when used, not as placeholders.
+        self.assertFalse((self.project / 'manuscript/outreach/visuals').exists())
         self.assertNotIn('{{', (self.project / 'repository/pyproject.toml').read_text())
         for name in ['manuscript', 'repository']:
             self.assertEqual(self.git(self.project / name, 'rev-parse', '--show-toplevel'), str(self.project / name))

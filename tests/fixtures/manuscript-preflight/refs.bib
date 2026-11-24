@@ -1,0 +1,55 @@
+% All entries are fictional, for testing only.
+
+@comment{reftool-meta:
+  A tool-generated metadata header. Its indented mirror of the key list must
+  NOT be mistaken for duplicate entries by the checker (regression guard):
+    @article{doe2015
+    @article{smith2018
+    @article{roe2011
+    @article{incomplete2023
+}
+
+@article{doe2015,
+  author  = {Doe, J. and Roe, R.},
+  title   = {A posteriori error estimation for adaptive discretizations},
+  journal = {Journal of Example Numerics},
+  volume  = {12},
+  pages   = {101--134},
+  year    = {2015},
+  doi     = {10.0000/jen.2015.0101},
+}
+
+@article{smith2018,
+  author  = {Smith, S. and Doe, J.},
+  title   = {Optimal convergence of adaptive methods for model problems},
+  journal = {Example Mathematics of Computation},
+  volume  = {45},
+  pages   = {5501--5530},
+  year    = {2018},
+  doi     = {10.0000/emc.2018.5501},
+}
+
+@article{roe2011,
+  author  = {Roe, R.},
+  title   = {Minimum-angle conditions for admissible meshes},
+  journal = {Example Numerical Analysis},
+  volume  = {3},
+  pages   = {77--98},
+  year    = {2011},
+  doi     = {10.0000/ena.2011.0077},
+}
+% roe2011 is never cited -> unused-entry INFO
+
+@article{incomplete2023,
+  title = {A paper with almost no metadata},
+  year  = {2023},
+}
+% missing author/journal/DOI -> bibliography-metadata audit (prose check)
+
+@misc{doe2015preprint,
+  author = {Doe, J. and Roe, R.},
+  title  = {A posteriori error estimation for adaptive discretizations},
+  year   = {2014},
+  doi    = {10.0000/jen.2015.0101},
+}
+% same DOI as doe2015 -> duplicate-reference (shared DOI) check; also never cited

@@ -5,7 +5,8 @@ The kit supplies shared skills and tools; each project owns its scientific
 choices, evidence, manuscript, environments, and local instructions.
 
 Install the kit once on your computer, then adopt it only in the projects where
-it is useful. The central checkout supplies the `research-setup` skill; each
+it is useful. The central checkout supplies the `research-setup` skill, and
+`manuscript-preflight` for pre-submission audits of any LaTeX manuscript; each
 project keeps its own pinned copy of the method, so it stays independent of the
 central checkout once initialized or adopted.
 
@@ -15,7 +16,7 @@ Give your agent this request:
 
 > Install the research workflow from
 > <https://github.com/maiani/research-project-template> on this computer. Read its
-> README, reuse an existing checkout if present, and register its setup skill for
+> README, reuse an existing checkout if present, and register its skills for
 > my agent. Do not initialize or modify any research project yet.
 
 The agent needs local file and command access, Python 3.11+, Git, and access to
@@ -34,7 +35,7 @@ python "$HOME/.local/share/research-workflow/workflow.py" install
 The default skill directory is `~/.agents/skills/`. Use
 `python workflow.py install --skills-dir PATH` for a different agent's configured
 skill directory; for Claude Code, that is `--skills-dir ~/.claude/skills`.
-The installer links the setup skill to this checkout: keep the checkout in place.
+The installer links both skills to this checkout: keep the checkout in place.
 It preserves existing installations and is safe to rerun. If links are
 unavailable, keep the complete kit checkout and ask the agent to read
 `skills/research-setup/SKILL.md` explicitly.
@@ -104,14 +105,14 @@ in AGENTS.md: review outdated rules selectively rather than replacing the file.
 
 ```text
 skills/
-  research-setup/       start or adopt a project (the only skill installed globally)
+  research-setup/       start or adopt a project (installed globally)
   research-work/        research, calculations, code, and figures
   research-repository/  promotion, shared code, collaboration, and codebase releases
   research-manuscript/  manuscript, referee responses, and outreach
+  manuscript-preflight/ pre-submission audits (installed globally; works anywhere)
 conventions.md          shared rules and routing to the skills
-tools/                  shared Python commands
-scaffold/               minimal new-project files
-templates/              optional components added with `add`
+tools/                  the kit's Python commands
+templates/              project files for `init` and optional components for `add`
 workflow.py             install, init, adopt, and project commands
 ```
 

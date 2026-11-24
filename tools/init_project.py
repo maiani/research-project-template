@@ -3,7 +3,6 @@
 import argparse
 import importlib.util
 from datetime import date
-import json
 import os
 from pathlib import Path
 import re
@@ -13,11 +12,10 @@ import tempfile
 from urllib.parse import urlparse
 
 WORKFLOW = Path(__file__).resolve().parents[1]
-TEMPLATE = WORKFLOW / 'scaffold'
+TEMPLATE = WORKFLOW / 'templates/project'
 spec = importlib.util.spec_from_file_location('workflow', WORKFLOW / 'tools/workflow.py')
 workflow = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(workflow)
-TOKEN = re.compile(r'\{\{\s*([A-Z][A-Z0-9_]*)\s*\}\}')
 RESERVED = {'.git', '.agents', '.codex', '.claude', '.aws'}
 
 
@@ -43,42 +41,27 @@ def overleaf_remote(value):
     raise ValueError('expected an Overleaf project URL or project ID')
 
 
-def check_template():
-    required = ['AGENTS.md', 'project.md', 'journal/YYYY-MM-DD.md']
-    for name in required:
+def check_templates():
+    """Validate every template folder: required files, no development artifacts, known placeholders."""
+    for name in ['AGENTS.md', 'project.md', 'journal/YYYY-MM-DD.md']:
         if not (TEMPLATE / name).is_file():
             raise ValueError(f'missing template file: {name}')
     for name in ['workflow.py', 'conventions.md', 'templates/manuscript/justfile',
                  'templates/repository/pyproject.toml']:
         if not (WORKFLOW / name).is_file():
             raise ValueError(f'missing workflow file: {name}')
-    for path in TEMPLATE.rglob('*'):
-        if path.name in {'.git', '.venv', '__pycache__'}:
-            raise ValueError(f'development artifact in template: {path}')
-    return [p for p in TEMPLATE.rglob('*') if p.is_file() and not p.is_symlink()]
-
-
-def render_template(files, values):
-    rendered = {}
-    for path in files:
-        relative = path.relative_to(TEMPLATE)
-        def replace(match):
-            key = match[1]
-            if key not in values:
-                raise ValueError(f'unknown placeholder {key} in {relative}')
-            value = values[key]
-            # AUTHOR appears inside a TOML string; escape quotes and backslashes.
-            return json.dumps(value, ensure_ascii=False)[1:-1] if relative.name == 'pyproject.toml' else value
-        rendered[relative] = TOKEN.sub(replace, path.read_text(encoding='utf-8'))
-    return rendered
+    for folder in sorted(p for p in (WORKFLOW / 'templates').iterdir() if p.is_dir()):
+        for path in folder.rglob('*'):
+            if path.name in {'.git', '.venv', '__pycache__'}:
+                raise ValueError(f'development artifact in template: {path}')
+        # Only init supplies the AGENTS.md block; optional components must not use it.
+        keys = [k for k in workflow.PLACEHOLDERS if folder == TEMPLATE or k != 'WORKFLOW_BLOCK']
+        workflow.render(folder, dict.fromkeys(keys, 'check'))
 
 
 def initialize(args):
-    files = check_template()
+    check_templates()
     if args.check:
-        render_template(files, dict.fromkeys(
-            ['PROJECT_TITLE', 'PAPER_TITLE', 'DESCRIPTION', 'AUTHORS', 'AUTHOR',
-             'STATUS', 'PROJECT_SLUG', 'DATE_ISO', 'WORKFLOW_BLOCK'], 'check'))
         print('Template check passed.')
         return
     if not args.target or not args.title or not args.author:
@@ -104,7 +87,7 @@ def initialize(args):
     values = dict(PROJECT_SLUG=slug, PROJECT_TITLE=args.title, PAPER_TITLE=args.title,
                   AUTHORS=args.author, AUTHOR=args.author, DESCRIPTION=args.desc or args.title,
                   STATUS=args.status, DATE_ISO=day, WORKFLOW_BLOCK=workflow.BLOCK)
-    rendered = render_template(files, values)
+    rendered = workflow.render(TEMPLATE, values)
     # Prepare everything before touching the target, including any network clone.
     with tempfile.TemporaryDirectory(prefix='research-init-') as temporary:
         stage = Path(temporary) / 'project'

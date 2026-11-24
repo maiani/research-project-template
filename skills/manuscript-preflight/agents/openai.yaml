@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manuscript Preflight"
+  short_description: "Audit a scientific LaTeX manuscript before submission"
+  default_prompt: "Use $manuscript-preflight to audit this LaTeX manuscript before submission and produce a prioritized report."
